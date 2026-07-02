@@ -1,0 +1,23 @@
+package com.docsphere.member;
+
+import com.docsphere.user.User;
+import com.docsphere.workspace.Workspace;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@Repository
+public interface WorkspaceMemberRepository extends JpaRepository<WorkspaceMember, UUID> {
+    List<WorkspaceMember> findByWorkspace(Workspace workspace);
+
+    List<WorkspaceMember> findByUser(User user);
+
+    Optional<WorkspaceMember> findByWorkspaceAndUser(Workspace workspace, User user);
+
+    boolean existsByWorkspaceAndUser(Workspace workspace, User user);
+
+    void deleteByWorkspaceAndUser(Workspace workspace, User user);
+}

@@ -40,7 +40,8 @@ public class EmailServiceImpl implements EmailService {
                     <p>If the button doesn't work, copy and paste this link into your browser:</p>
                     <p>%s</p>
                 </div>
-                """.formatted(userName, verificationLink, verificationLink);
+                """
+                .formatted(userName, verificationLink, verificationLink);
 
         sendHtmlEmail(toEmail, subject, body);
     }
@@ -63,7 +64,8 @@ public class EmailServiceImpl implements EmailService {
                     </p>
                     <p>If you didn't request this, you can safely ignore this email.</p>
                 </div>
-                """.formatted(userName, resetLink);
+                """
+                .formatted(userName, resetLink);
 
         sendHtmlEmail(toEmail, subject, body);
     }
@@ -86,14 +88,23 @@ public class EmailServiceImpl implements EmailService {
                     </p>
                     <p>This invitation expires in 7 days.</p>
                 </div>
-                """.formatted(inviterName, workspaceName, invitationLink);
-        
+                """
+                .formatted(inviterName, workspaceName, invitationLink);
+
         sendHtmlEmail(toEmail, subject, body);
     }
 
     private void sendHtmlEmail(String toEmail, String subject, String htmlBody) {
+
+        System.out.println("========== EMAIL DEBUG ==========");
+        System.out.println("From : " + fromEmail);
+        System.out.println("To   : " + toEmail);
+        System.out.println("Subj : " + subject);
+
         try {
+
             MimeMessage message = mailSender.createMimeMessage();
+
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
 
             helper.setFrom(fromEmail);
@@ -101,9 +112,17 @@ public class EmailServiceImpl implements EmailService {
             helper.setSubject(subject);
             helper.setText(htmlBody, true);
 
+            System.out.println("Sending email...");
+
             mailSender.send(message);
-        } catch (MessagingException e) {
-            throw new RuntimeException("Failed to send email: " + e.getMessage());
+
+            System.out.println("EMAIL SENT SUCCESSFULLY");
+
+        } catch (Exception e) {
+
+            System.out.println("EMAIL FAILED");
+            e.printStackTrace();
+
         }
     }
 }

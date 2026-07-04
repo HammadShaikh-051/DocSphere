@@ -39,6 +39,7 @@ spring:
           auth: true
           starttls:
             enable: true
+        debug: true
 
 app:
   jwt:

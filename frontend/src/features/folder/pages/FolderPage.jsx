@@ -1,8 +1,14 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Plus, Folder, FileText, ChevronRight } from 'lucide-react';
-import { useFolderDetail, useSubFolders, useCreateSubFolder } from '../useFolder';
+import { Plus, Folder, FileText, ChevronRight, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { useFolderDetail, useSubFolders, useCreateSubFolder, useDeleteFolder, useRenameFolder } from '../useFolder';
 import { useFolderDocuments, useCreateDocumentInFolder } from '../../document/useDocument';
+
+const menuItemStyle = {
+    display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
+    padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer',
+    fontSize: '13px', color: 'var(--text-primary)', textAlign: 'left',
+};
 
 function FolderPage() {
     const { workspaceId, folderId } = useParams();
@@ -21,6 +27,42 @@ function FolderPage() {
     const folder = folderData?.data;
     const subFolders = subFoldersData?.data || [];
     const documents = documentsData?.data || [];
+
+    const [openMenuId, setOpenMenuId] = useState(null);
+    const [renamingId, setRenamingId] = useState(null);
+    const [renameValue, setRenameValue] = useState('');
+
+    const deleteFolderMutation = useDeleteFolder();
+    const renameFolderMutation = useRenameFolder();
+
+    const toggleMenu = (e, folderId) => {
+        e.stopPropagation();
+        setOpenMenuId(openMenuId === folderId ? null : folderId);
+    };
+
+    const handleDeleteSubFolder = (e, sub) => {
+        e.stopPropagation();
+        setOpenMenuId(null);
+        if (confirm(`Delete "${sub.name}"? This cannot be undone.`)) {
+            deleteFolderMutation.mutate(sub.id);
+        }
+    };
+
+    const startRename = (e, sub) => {
+        e.stopPropagation();
+        setOpenMenuId(null);
+        setRenamingId(sub.id);
+        setRenameValue(sub.name);
+    };
+
+    const submitRename = (e, folderId) => {
+        e.preventDefault();
+        e.stopPropagation();
+        renameFolderMutation.mutate(
+            { folderId, name: renameValue },
+            { onSuccess: () => setRenamingId(null) }
+        );
+    };
 
     const handleCreateSubFolder = (e) => {
         e.preventDefault();
@@ -94,6 +136,70 @@ function FolderPage() {
                         New Folder
                     </button>
                 </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
+                    {subFolders.map((sub) => (
+                        <div
+                            key={sub.id}
+                            className="item-card item-card-folder"
+                            onClick={() => renamingId !== sub.id && navigate(`/workspaces/${workspaceId}/folders/${sub.id}`)}
+                            style={{ position: 'relative' }}
+                        >
+                            <Folder size={18} style={{ color: 'var(--g-yellow)', flexShrink: 0 }} />
+
+                            {renamingId === sub.id ? (
+                                <form
+                                    onSubmit={(e) => submitRename(e, sub.id)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    style={{ flex: 1, display: 'flex', gap: '6px' }}
+                                >
+                                    <input
+                                        type="text"
+                                        value={renameValue}
+                                        onChange={(e) => setRenameValue(e.target.value)}
+                                        className="ds-input"
+                                        style={{ flex: 1, fontSize: '13px', padding: '2px 6px' }}
+                                        autoFocus
+                                        onBlur={() => setRenamingId(null)}
+                                    />
+                                </form>
+                            ) : (
+                                <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                                    {sub.name}
+                                </span>
+                            )}
+
+                            <div style={{ position: 'relative' }}>
+                                <button
+                                    onClick={(e) => toggleMenu(e, sub.id)}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: 'var(--text-muted)', display: 'flex' }}
+                                >
+                                    <MoreVertical size={14} />
+                                </button>
+
+                                {openMenuId === sub.id && (
+                                    <div
+                                        onClick={(e) => e.stopPropagation()}
+                                        style={{
+                                            position: 'absolute', right: 0, top: '100%', marginTop: '4px',
+                                            background: 'var(--surface)', border: '1px solid var(--border)',
+                                            borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                            minWidth: '130px', zIndex: 10, overflow: 'hidden',
+                                        }}
+                                    >
+                                        <button onClick={(e) => startRename(e, sub)} style={menuItemStyle}>
+                                            <Pencil size={14} />
+                                            Rename
+                                        </button>
+                                        <button onClick={(e) => handleDeleteSubFolder(e, sub)} style={{ ...menuItemStyle, color: '#dc2626' }}>
+                                            <Trash2 size={14} />
+                                            Delete
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
 
                 {showFolderForm && (
                     <form onSubmit={handleCreateSubFolder} className="inline-form" style={{ marginBottom: '14px' }}>
@@ -114,29 +220,6 @@ function FolderPage() {
                             Cancel
                         </button>
                     </form>
-                )}
-
-                {isSubFoldersLoading ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '13px' }}>
-                        <div className="ds-spinner" /> Loading…
-                    </div>
-                ) : subFolders.length === 0 ? (
-                    <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No subfolders yet.</p>
-                ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
-                        {subFolders.map((sub) => (
-                            <div
-                                key={sub.id}
-                                className="item-card item-card-folder"
-                                onClick={() => navigate(`/workspaces/${workspaceId}/folders/${sub.id}`)}
-                            >
-                                <Folder size={18} style={{ color: 'var(--g-yellow)', flexShrink: 0 }} />
-                                <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {sub.name}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
                 )}
             </section>
 

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getRootFolders, createFolder, getFolderById, getSubFolders } from './folderApi';
+import { getRootFolders, createFolder, getFolderById, getSubFolders, deleteFolder, renameFolder } from './folderApi';
 
 export const useRootFolders = (workspaceId) => {
     return useQuery({
@@ -44,6 +44,29 @@ export const useCreateSubFolder = (folderId, workspaceId) => {
             createFolder(workspaceId, { ...folderData, parentFolderId: folderId }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['folders', 'subfolders', folderId] });
+        },
+    });
+};
+
+export const useDeleteFolder = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (folderId) =>
+            deleteFolder(folderId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['folders'] });
+        },
+    });
+};
+
+export const useRenameFolder = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ folderId, name }) => renameFolder(folderId, name),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['folders'] });
         },
     });
 };

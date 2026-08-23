@@ -2,9 +2,15 @@ package com.docsphere.workspace;
 
 import com.docsphere.activity.ActivityAction;
 import com.docsphere.activity.ActivityEntityType;
+import com.docsphere.activity.ActivityLogRepository;
 import com.docsphere.activity.ActivityLogService;
 import com.docsphere.common.exception.ResourceNotFoundException;
 import com.docsphere.common.exception.UnauthorizedException;
+import com.docsphere.document.Document;
+import com.docsphere.document.DocumentRepository;
+import com.docsphere.folder.Folder;
+import com.docsphere.folder.FolderRepository;
+import com.docsphere.invitation.InvitationRepository;
 import com.docsphere.member.WorkspaceMember;
 import com.docsphere.member.WorkspaceMemberRepository;
 import com.docsphere.member.WorkspaceRole;
@@ -31,6 +37,10 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     private final UserRepository userRepository;
     private final WorkspaceMapper workspaceMapper;
     private final ActivityLogService activityLogService;
+    private final DocumentRepository documentRepository;
+    private final FolderRepository folderRepository;
+    private final ActivityLogRepository activityLogRepository;
+    private final InvitationRepository invitationRepository;
 
     @Override
     @Transactional
@@ -112,6 +122,18 @@ public class WorkspaceServiceImpl implements WorkspaceService {
         if (!workspace.getOwner().getId().equals(requesterId)) {
             throw new UnauthorizedException("Only the workspace owner can delete this workspace");
         }
+
+        List<Document> documents = documentRepository.findByWorkspace(workspace);
+        documentRepository.deleteAll(documents);
+        documentRepository.flush();
+
+        List<Folder> folders = folderRepository.findByWorkspace(workspace);
+        folderRepository.deleteAll(folders);
+        folderRepository.flush();
+
+        activityLogRepository.deleteAll(activityLogRepository.findByWorkspaceOrderByCreatedAtDesc(workspace));
+        invitationRepository.deleteAll(invitationRepository.findByWorkspace(workspace));
+        workspaceMemberRepository.deleteAll(workspaceMemberRepository.findByWorkspace(workspace));
 
         workspaceRepository.delete(workspace);
     }

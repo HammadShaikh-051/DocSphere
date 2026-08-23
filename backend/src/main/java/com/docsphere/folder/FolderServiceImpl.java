@@ -6,6 +6,8 @@ import com.docsphere.activity.ActivityLogService;
 import com.docsphere.common.exception.BadRequestException;
 import com.docsphere.common.exception.ResourceNotFoundException;
 import com.docsphere.common.exception.UnauthorizedException;
+import com.docsphere.document.Document;
+import com.docsphere.document.DocumentRepository;
 import com.docsphere.folder.dto.CreateFolderRequest;
 import com.docsphere.folder.dto.FolderDto;
 import com.docsphere.member.WorkspaceMember;
@@ -33,6 +35,7 @@ public class FolderServiceImpl implements FolderService {
     private final UserRepository userRepository;
     private final FolderMapper folderMapper;
     private final ActivityLogService activityLogService;
+    private final DocumentRepository documentRepository;
 
     @Override
     @Transactional
@@ -135,7 +138,21 @@ public class FolderServiceImpl implements FolderService {
 
         verifyCanEdit(folder.getWorkspace(), requester);
 
+        deleteFolderRecursively(folder);
+    }
+
+    private void deleteFolderRecursively(Folder folder) {
+        List<Folder> subFolders = folderRepository.findByParentFolder(folder);
+        for (Folder subFolder : subFolders) {
+            deleteFolderRecursively(subFolder);
+        }
+
+        List<Document> documents = documentRepository.findByFolder(folder);
+        documentRepository.deleteAll(documents);
+        documentRepository.flush();
+
         folderRepository.delete(folder);
+        folderRepository.flush();
     }
 
     private void verifyCanEdit(Workspace workspace, User user) {

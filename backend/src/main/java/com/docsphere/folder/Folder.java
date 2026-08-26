@@ -6,6 +6,8 @@ import com.docsphere.workspace.Workspace;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "folders")
 @Getter
@@ -29,4 +31,7 @@ public class Folder extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
+
+    @Column(nullable = true)
+    private LocalDateTime deletedAt;
 }

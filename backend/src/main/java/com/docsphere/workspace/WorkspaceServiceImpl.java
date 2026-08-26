@@ -123,7 +123,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
             throw new UnauthorizedException("Only the workspace owner can delete this workspace");
         }
 
-        List<Document> documents = documentRepository.findByWorkspace(workspace);
+        List<Document> documents = documentRepository.findByWorkspaceAndDeletedAtIsNull(workspace);
         documentRepository.deleteAll(documents);
         documentRepository.flush();
 

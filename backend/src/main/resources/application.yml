@@ -28,6 +28,10 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
   # mail:
   #   host: ${MAIL_HOST}
   #   port: ${MAIL_PORT}

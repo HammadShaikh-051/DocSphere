@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -55,7 +56,7 @@ public class FolderServiceImpl implements FolderService {
             }
         }
 
-        boolean nameExists = folderRepository.existsByNameAndWorkspaceAndParentFolder(
+        boolean nameExists = folderRepository.existsByNameAndWorkspaceAndParentFolderAndDeletedAtIsNull(
                 request.getName(), workspace, parentFolder
         );
 
@@ -94,7 +95,7 @@ public class FolderServiceImpl implements FolderService {
     public List<FolderDto> getRootFolders(UUID workspaceId) {
         Workspace workspace = getWorkspaceOrThrow(workspaceId);
 
-        return folderRepository.findByWorkspaceAndParentFolderIsNull(workspace).stream()
+        return folderRepository.findByWorkspaceAndParentFolderIsNullAndDeletedAtIsNull(workspace).stream()
                 .map(folderMapper::toDto)
                 .collect(Collectors.toList());
     }
@@ -103,7 +104,7 @@ public class FolderServiceImpl implements FolderService {
     public List<FolderDto> getSubFolders(UUID folderId) {
         Folder parentFolder = getFolderOrThrow(folderId);
 
-        return folderRepository.findByParentFolder(parentFolder).stream()
+        return folderRepository.findByParentFolderAndDeletedAtIsNull(parentFolder).stream()
                 .map(folderMapper::toDto)
                 .collect(Collectors.toList());
     }
@@ -116,7 +117,7 @@ public class FolderServiceImpl implements FolderService {
 
         verifyCanEdit(folder.getWorkspace(), requester);
 
-        boolean nameExists = folderRepository.existsByNameAndWorkspaceAndParentFolder(
+        boolean nameExists = folderRepository.existsByNameAndWorkspaceAndParentFolderAndDeletedAtIsNull(
                 newName, folder.getWorkspace(), folder.getParentFolder()
         );
 
@@ -138,21 +139,90 @@ public class FolderServiceImpl implements FolderService {
 
         verifyCanEdit(folder.getWorkspace(), requester);
 
-        deleteFolderRecursively(folder);
+        softDeleteFolderRecursively(folder);
     }
 
-    private void deleteFolderRecursively(Folder folder) {
+    private void softDeleteFolderRecursively(Folder folder) {
+        LocalDateTime now = LocalDateTime.now();
+
         List<Folder> subFolders = folderRepository.findByParentFolder(folder);
         for (Folder subFolder : subFolders) {
-            deleteFolderRecursively(subFolder);
+            softDeleteFolderRecursively(subFolder);
         }
 
         List<Document> documents = documentRepository.findByFolder(folder);
-        documentRepository.deleteAll(documents);
+        for (Document doc : documents) {
+            doc.setDeletedAt(now);
+            documentRepository.save(doc);
+        }
+
+        folder.setDeletedAt(now);
+        folderRepository.save(folder);
+    }
+
+    @Override
+    @Transactional
+    public void restoreFolder(UUID folderId, UUID requesterId) {
+        Folder folder = folderRepository.findById(folderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Folder not found"));
+        User requester = getUserOrThrow(requesterId);
+
+        verifyCanEdit(folder.getWorkspace(), requester);
+
+        restoreFolderRecursively(folder);
+    }
+
+    private void restoreFolderRecursively(Folder folder) {
+        folder.setDeletedAt(null);
+        folderRepository.save(folder);
+
+        List<Folder> subFolders = folderRepository.findByParentFolder(folder);
+        for (Folder sub : subFolders) {
+            restoreFolderRecursively(sub);
+        }
+
+        List<Document> documents = documentRepository.findByFolder(folder);
+        for (Document doc : documents) {
+            doc.setDeletedAt(null);
+            documentRepository.save(doc);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void permanentlyDeleteFolder(UUID folderId, UUID requesterId) {
+        Folder folder = folderRepository.findById(folderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Folder not found"));
+        User requester = getUserOrThrow(requesterId);
+
+        verifyCanEdit(folder.getWorkspace(), requester);
+
+        hardDeleteFolderRecursively(folder);
+    }
+
+    private void hardDeleteFolderRecursively(Folder folder) {
+        List<Folder> subFolders = folderRepository.findByParentFolder(folder);
+        for (Folder subFolder : subFolders) {
+            hardDeleteFolderRecursively(subFolder);
+        }
+
+        documentRepository.deleteAll(documentRepository.findByFolder(folder));
         documentRepository.flush();
 
         folderRepository.delete(folder);
         folderRepository.flush();
+    }
+
+    @Override
+    public List<FolderDto> getTrashedFolders(UUID workspaceId) {
+        Workspace workspace = getWorkspaceOrThrow(workspaceId);
+
+        List<Folder> trashed = folderRepository.findByWorkspaceAndDeletedAtIsNotNullOrderByDeletedAtDesc(workspace);
+
+        return trashed.stream()
+                .filter(folder -> folder.getParentFolder() == null || folder.getParentFolder().getDeletedAt() == null)
+                .map(folderMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     private void verifyCanEdit(Workspace workspace, User user) {

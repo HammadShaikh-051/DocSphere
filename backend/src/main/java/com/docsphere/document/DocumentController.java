@@ -88,4 +88,30 @@ public class DocumentController {
         documentService.deleteDocument(documentId, currentUser.getUser().getId());
         return ResponseEntity.ok(ApiResponse.success("Document deleted successfully"));
     }
+
+    @PostMapping("/api/documents/{documentId}/restore")
+    public ResponseEntity<ApiResponse<Void>> restoreDocument(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @PathVariable UUID documentId
+    ) {
+        documentService.restoreDocument(documentId, currentUser.getUser().getId());
+        return ResponseEntity.ok(ApiResponse.success("Document restored successfully"));
+    }
+
+    @DeleteMapping("/api/documents/{documentId}/permanent")
+    public ResponseEntity<ApiResponse<Void>> permanentlyDeleteDocument(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @PathVariable UUID documentId
+    ) {
+        documentService.permanentlyDeleteDocument(documentId, currentUser.getUser().getId());
+        return ResponseEntity.ok(ApiResponse.success("Document permanently deleted"));
+    }
+
+    @GetMapping("/api/workspaces/{workspaceId}/documents/trash")
+    public ResponseEntity<ApiResponse<List<DocumentDto>>> getTrashedDocuments(
+            @PathVariable UUID workspaceId
+    ) {
+        List<DocumentDto> documents = documentService.getTrashedDocuments(workspaceId);
+        return ResponseEntity.ok(ApiResponse.success("Trashed documents fetched successfully", documents));
+    }
 }

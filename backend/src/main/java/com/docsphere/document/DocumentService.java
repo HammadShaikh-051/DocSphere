@@ -22,4 +22,10 @@ public interface DocumentService {
     DocumentDto updateDocument(UUID documentId, UUID requesterId, UpdateDocumentRequest request);
 
     void deleteDocument(UUID documentId, UUID requesterId);
+
+    void restoreDocument(UUID documentId, UUID requesterId);
+
+    void permanentlyDeleteDocument(UUID documentId, UUID requesterId);
+
+    List<DocumentDto> getTrashedDocuments(UUID workspaceId);
 }

@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -88,8 +89,8 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     public List<DocumentDto> getWorkspaceDocuments(UUID workspaceId) {
         Workspace workspace = getWorkspaceOrThrow(workspaceId);
-
         return documentRepository.findByWorkspaceOrderByUpdatedAtDesc(workspace).stream()
+                .filter(d -> d.getDeletedAt() == null)
                 .map(documentMapper::toDto)
                 .collect(Collectors.toList());
     }
@@ -98,8 +99,7 @@ public class DocumentServiceImpl implements DocumentService {
     public List<DocumentDto> getFolderDocuments(UUID folderId) {
         Folder folder = folderRepository.findById(folderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Folder not found"));
-
-        return documentRepository.findByFolder(folder).stream()
+        return documentRepository.findByFolderAndDeletedAtIsNull(folder).stream()
                 .map(documentMapper::toDto)
                 .collect(Collectors.toList());
     }
@@ -107,8 +107,7 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     public List<DocumentDto> getRootDocuments(UUID workspaceId) {
         Workspace workspace = getWorkspaceOrThrow(workspaceId);
-
-        return documentRepository.findByWorkspaceAndFolderIsNull(workspace).stream()
+        return documentRepository.findByWorkspaceAndFolderIsNullAndDeletedAtIsNull(workspace).stream()
                 .map(documentMapper::toDto)
                 .collect(Collectors.toList());
     }
@@ -139,10 +138,43 @@ public class DocumentServiceImpl implements DocumentService {
     public void deleteDocument(UUID documentId, UUID requesterId) {
         Document document = getDocumentOrThrow(documentId);
         User requester = getUserOrThrow(requesterId);
+        verifyCanEdit(document.getWorkspace(), requester);
 
+        document.setDeletedAt(LocalDateTime.now());
+        documentRepository.save(document);
+    }
+
+    @Override
+    @Transactional
+    public void restoreDocument(UUID documentId, UUID requesterId) {
+        Document document = getDocumentOrThrow(documentId);
+        User requester = getUserOrThrow(requesterId);
+        verifyCanEdit(document.getWorkspace(), requester);
+
+        document.setDeletedAt(null);
+        documentRepository.save(document);
+    }
+
+    @Override
+    @Transactional
+    public void permanentlyDeleteDocument(UUID documentId, UUID requesterId) {
+        Document document = getDocumentOrThrow(documentId);
+        User requester = getUserOrThrow(requesterId);
         verifyCanEdit(document.getWorkspace(), requester);
 
         documentRepository.delete(document);
+    }
+
+    @Override
+    public List<DocumentDto> getTrashedDocuments(UUID workspaceId) {
+        Workspace workspace = getWorkspaceOrThrow(workspaceId);
+
+        List<Document> trashed = documentRepository.findByWorkspaceAndDeletedAtIsNotNullOrderByDeletedAtDesc(workspace);
+
+        return trashed.stream()
+                .filter(doc -> doc.getFolder() == null || doc.getFolder().getDeletedAt() == null)
+                .map(documentMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     private void verifyCanEdit(Workspace workspace, User user) {

@@ -1,13 +1,23 @@
 package com.docsphere.folder;
 
 import com.docsphere.folder.dto.FolderDto;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
+import org.springframework.stereotype.Component;
 
-@Mapper(componentModel = "spring")
-public interface FolderMapper {
-    @Mapping(source = "workspace.id", target = "workspaceId")
-    @Mapping(source = "parentFolder.id", target = "parentFolderId")
-    @Mapping(source = "createdBy.id", target = "createdBy")
-    FolderDto toDto(Folder folder);
+@Component
+public class FolderMapper {
+
+    public FolderDto toDto(Folder folder) {
+        if (folder == null) return null;
+
+        return FolderDto.builder()
+                .id(folder.getId())
+                .name(folder.getName())
+                .workspaceId(folder.getWorkspace() != null ? folder.getWorkspace().getId() : null)
+                .parentFolderId(folder.getParentFolder() != null ? folder.getParentFolder().getId() : null)
+                .createdBy(folder.getCreatedBy() != null ? folder.getCreatedBy().getId() : null)
+                .createdAt(folder.getCreatedAt())
+                .updatedAt(folder.getUpdatedAt())
+                .deletedAt(folder.getDeletedAt())
+                .build();
+    }
 }

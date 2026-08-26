@@ -80,4 +80,30 @@ public class FolderController {
         folderService.deleteFolder(folderId, currentUser.getUser().getId());
         return ResponseEntity.ok(ApiResponse.success("Folder deleted successfully"));
     }
+
+    @PostMapping("/api/folders/{folderId}/restore")
+    public ResponseEntity<ApiResponse<Void>> restoreFolder(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @PathVariable UUID folderId
+    ) {
+        folderService.restoreFolder(folderId, currentUser.getUser().getId());
+        return ResponseEntity.ok(ApiResponse.success("Folder restored successfully"));
+    }
+
+    @DeleteMapping("/api/folders/{folderId}/permanent")
+    public ResponseEntity<ApiResponse<Void>> permanentlyDeleteFolder(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @PathVariable UUID folderId
+    ) {
+        folderService.permanentlyDeleteFolder(folderId, currentUser.getUser().getId());
+        return ResponseEntity.ok(ApiResponse.success("Folder permanently deleted"));
+    }
+
+    @GetMapping("/api/workspaces/{workspaceId}/folders/trash")
+    public ResponseEntity<ApiResponse<List<FolderDto>>> getTrashedFolders(
+            @PathVariable UUID workspaceId
+    ) {
+        List<FolderDto> folders = folderService.getTrashedFolders(workspaceId);
+        return ResponseEntity.ok(ApiResponse.success("Trashed folders fetched successfully", folders));
+    }
 }

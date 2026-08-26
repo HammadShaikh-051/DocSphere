@@ -19,4 +19,10 @@ public interface FolderService {
     FolderDto renameFolder(UUID folderId, UUID requesterId, String newName);
 
     void deleteFolder(UUID folderId, UUID requesterId);
+
+    void restoreFolder(UUID folderId, UUID requesterId);
+
+    void permanentlyDeleteFolder(UUID folderId, UUID requesterId);
+
+    List<FolderDto> getTrashedFolders(UUID workspaceId);
 }

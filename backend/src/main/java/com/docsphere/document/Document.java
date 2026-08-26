@@ -9,6 +9,7 @@ import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @Entity
@@ -42,4 +43,7 @@ public class Document extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "last_updated_by", nullable = false)
     private User lastUpdatedBy;
+
+    @Column(nullable = true)
+    private LocalDateTime deletedAt;
 }

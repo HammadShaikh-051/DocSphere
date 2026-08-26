@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getRootDocuments, createDocument, getFolderDocuments, getDocumentById, updateDocument } from './documentApi';
+import { getRootDocuments, createDocument, getFolderDocuments, getDocumentById, updateDocument, deleteDocument } from './documentApi';
 
 
 export const useRootDocuments = (workspaceId) => {
@@ -56,6 +56,58 @@ export const useUpdateDocument = (documentId) => {
         mutationFn: (documentData) => updateDocument(documentId, documentData),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['documents', documentId] });
+        },
+    });
+};
+
+export const useDeleteDocument = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (documentId) => deleteDocument(documentId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['documents'] });
+        },
+    });
+};
+
+export const useRenameDocument = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ documentId, title }) => updateDocument(documentId, { title }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['documents'] });
+        },
+    });
+};
+
+import { restoreDocument, permanentlyDeleteDocument, getTrashedDocuments } from './documentApi';
+
+export const useTrashedDocuments = (workspaceId) => {
+    return useQuery({
+        queryKey: ['documents', 'trash', workspaceId],
+        queryFn: () => getTrashedDocuments(workspaceId),
+        enabled: !!workspaceId,
+    });
+};
+
+export const useRestoreDocument = (workspaceId) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (documentId) => restoreDocument(documentId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['documents'] });
+        },
+    });
+};
+
+export const usePermanentlyDeleteDocument = (workspaceId) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (documentId) => permanentlyDeleteDocument(documentId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['documents', 'trash', workspaceId] });
         },
     });
 };

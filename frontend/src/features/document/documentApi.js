@@ -24,3 +24,23 @@ export const updateDocument = async (documentId, documentData) => {
     const response = await api.put(`/documents/${documentId}`, documentData);
     return response.data;
 };
+
+export const deleteDocument = async (documentId) => {
+    const response = await api.delete(`/documents/${documentId}`);
+    return response.data;
+};
+
+export const restoreDocument = async (documentId) => {
+    const response = await api.post(`/documents/${documentId}/restore`);
+    return response.data;
+};
+
+export const permanentlyDeleteDocument = async (documentId) => {
+    const response = await api.delete(`/documents/${documentId}/permanent`);
+    return response.data;
+};
+
+export const getTrashedDocuments = async (workspaceId) => {
+    const response = await api.get(`/workspaces/${workspaceId}/documents/trash`);
+    return response.data;
+};

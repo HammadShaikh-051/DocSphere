@@ -2,6 +2,7 @@ import { LogOut, Sun, Moon, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useTheme } from '../../context/ThemeContext';
+import SearchBar from './SearchBar';
 
 function Topbar({ onToggleSidebar }) {
     const navigate = useNavigate();
@@ -37,6 +38,8 @@ function Topbar({ onToggleSidebar }) {
                 <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
                     {user?.name}
                 </span>
+
+                <SearchBar />
 
                 {/* Theme toggle */}
                 <button

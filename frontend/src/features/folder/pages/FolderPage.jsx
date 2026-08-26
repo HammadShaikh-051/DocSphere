@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Plus, Folder, FileText, ChevronRight, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { useFolderDetail, useSubFolders, useCreateSubFolder, useDeleteFolder, useRenameFolder } from '../useFolder';
-import { useFolderDocuments, useCreateDocumentInFolder } from '../../document/useDocument';
+import { useFolderDocuments, useCreateDocumentInFolder, useDeleteDocument, useRenameDocument } from '../../document/useDocument';
 
 const menuItemStyle = {
     display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
@@ -32,8 +32,14 @@ function FolderPage() {
     const [renamingId, setRenamingId] = useState(null);
     const [renameValue, setRenameValue] = useState('');
 
+    const [openDocMenuId, setOpenDocMenuId] = useState(null);
+    const [renamingDocId, setRenamingDocId] = useState(null);
+    const [renameDocTitle, setRenameDocTitle] = useState('');
+
     const deleteFolderMutation = useDeleteFolder();
     const renameFolderMutation = useRenameFolder();
+    const deleteDocMutation = useDeleteDocument();
+    const renameDocMutation = useRenameDocument();
 
     const toggleMenu = (e, folderId) => {
         e.stopPropagation();
@@ -43,7 +49,7 @@ function FolderPage() {
     const handleDeleteSubFolder = (e, sub) => {
         e.stopPropagation();
         setOpenMenuId(null);
-        if (confirm(`Delete "${sub.name}"? This cannot be undone.`)) {
+        if (confirm(`Move "${folder.name}" to trash?`)) {
             deleteFolderMutation.mutate(sub.id);
         }
     };
@@ -61,6 +67,35 @@ function FolderPage() {
         renameFolderMutation.mutate(
             { folderId, name: renameValue },
             { onSuccess: () => setRenamingId(null) }
+        );
+    };
+
+    const toggleDocMenu = (e, docId) => {
+        e.stopPropagation();
+        setOpenDocMenuId(openDocMenuId === docId ? null : docId);
+    };
+
+    const handleDeleteDoc = (e, doc) => {
+        e.stopPropagation();
+        setOpenDocMenuId(null);
+        if (confirm(`Delete "${doc.title}"? This cannot be undone.`)) {
+            deleteDocMutation.mutate(doc.id);
+        }
+    };
+
+    const startRenameDoc = (e, doc) => {
+        e.stopPropagation();
+        setOpenDocMenuId(null);
+        setRenamingDocId(doc.id);
+        setRenameDocTitle(doc.title);
+    };
+
+    const submitRenameDoc = (e, docId) => {
+        e.preventDefault();
+        e.stopPropagation();
+        renameDocMutation.mutate(
+            { documentId: docId, title: renameDocTitle },
+            { onSuccess: () => setRenamingDocId(null) }
         );
     };
 
@@ -258,12 +293,64 @@ function FolderPage() {
                             <div
                                 key={document.id}
                                 className="item-card item-card-document"
-                                onClick={() => navigate(`/documents/${document.id}`)}
+                                onClick={() => renamingDocId !== document.id && navigate(`/documents/${document.id}`)}
+                                style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
                             >
-                                <FileText size={17} style={{ color: 'var(--g-blue)', flexShrink: 0 }} />
-                                <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>
-                                    {document.title}
-                                </span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+                                    <FileText size={17} style={{ color: 'var(--g-blue)', flexShrink: 0 }} />
+                                    {renamingDocId === document.id ? (
+                                        <form
+                                            onSubmit={(e) => submitRenameDoc(e, document.id)}
+                                            onClick={(e) => e.stopPropagation()}
+                                            style={{ flex: 1, display: 'flex', gap: '6px' }}
+                                        >
+                                            <input
+                                                type="text"
+                                                value={renameDocTitle}
+                                                onChange={(e) => setRenameDocTitle(e.target.value)}
+                                                className="ds-input"
+                                                style={{ flex: 1, fontSize: '13px', padding: '2px 6px' }}
+                                                autoFocus
+                                                onBlur={() => setRenamingDocId(null)}
+                                            />
+                                        </form>
+                                    ) : (
+                                        <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {document.title}
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div style={{ position: 'relative' }}>
+                                    <button
+                                        onClick={(e) => toggleDocMenu(e, document.id)}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: 'var(--text-muted)', display: 'flex' }}
+                                        title="Document options"
+                                    >
+                                        <MoreVertical size={14} />
+                                    </button>
+
+                                    {openDocMenuId === document.id && (
+                                        <div
+                                            onClick={(e) => e.stopPropagation()}
+                                            style={{
+                                                position: 'absolute', right: 0, top: '100%', marginTop: '4px',
+                                                background: 'var(--surface)', border: '1px solid var(--border)',
+                                                borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                                minWidth: '130px', zIndex: 10, overflow: 'hidden',
+                                            }}
+                                        >
+                                            <button onClick={(e) => startRenameDoc(e, document)} style={menuItemStyle}>
+                                                <Pencil size={14} />
+                                                Rename
+                                            </button>
+                                            <button onClick={(e) => handleDeleteDoc(e, document)} style={{ ...menuItemStyle, color: '#dc2626' }}>
+                                                <Trash2 size={14} />
+                                                Delete
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         ))}
                     </div>

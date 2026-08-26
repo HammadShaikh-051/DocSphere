@@ -14,6 +14,7 @@ import AcceptInvitePage from '../features/invitation/pages/AcceptInvitePage';
 import WorkspaceListPage from '../features/workspace/pages/WorkspaceListPage';
 import ProfilePage from '../features/profile/pages/ProfilePage';
 import OAuthCallbackPage from '../features/auth/pages/OAuthCallbackPage';
+import TrashPage from '../features/workspace/pages/TrashPage';
 
 function ProtectedRoute({ children }) {
     const isAuthenticated = useAuthStore((state) => !!state.accessToken);
@@ -102,6 +103,11 @@ function AppRouter() {
                 <Route path="/oauth2/callback" element={<OAuthCallbackPage />} />
 
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+                <Route
+                    path="/workspaces/:workspaceId/trash"
+                    element={<ProtectedRoute><TrashPage /></ProtectedRoute>}
+                />
             </Routes>
         </BrowserRouter>
     );

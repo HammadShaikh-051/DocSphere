@@ -70,3 +70,33 @@ export const useRenameFolder = () => {
         },
     });
 };
+
+import { restoreFolder, permanentlyDeleteFolder, getTrashedFolders } from './folderApi';
+
+export const useTrashedFolders = (workspaceId) => {
+    return useQuery({
+        queryKey: ['folders', 'trash', workspaceId],
+        queryFn: () => getTrashedFolders(workspaceId),
+        enabled: !!workspaceId,
+    });
+};
+
+export const useRestoreFolder = (workspaceId) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (folderId) => restoreFolder(folderId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['folders'] });
+        },
+    });
+};
+
+export const usePermanentlyDeleteFolder = (workspaceId) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (folderId) => permanentlyDeleteFolder(folderId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['folders', 'trash', workspaceId] });
+        },
+    });
+};

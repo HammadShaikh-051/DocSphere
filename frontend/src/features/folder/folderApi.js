@@ -29,3 +29,18 @@ export const renameFolder = async (folderId, name) => {
     const response = await api.put(`/folders/${folderId}`, { name });
     return response.data;
 };
+
+export const restoreFolder = async (folderId) => {
+    const response = await api.post(`/folders/${folderId}/restore`);
+    return response.data;
+};
+
+export const permanentlyDeleteFolder = async (folderId) => {
+    const response = await api.delete(`/folders/${folderId}/permanent`);
+    return response.data;
+};
+
+export const getTrashedFolders = async (workspaceId) => {
+    const response = await api.get(`/workspaces/${workspaceId}/folders/trash`);
+    return response.data;
+};

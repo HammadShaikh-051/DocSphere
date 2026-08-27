@@ -5,6 +5,7 @@ import { useWorkspaceDetail, useUpdateWorkspace, useDeleteWorkspace } from '../u
 import { useRootFolders, useCreateFolder, useDeleteFolder, useRenameFolder } from '../../folder/useFolder';
 import { useRootDocuments, useCreateDocument, useDeleteDocument, useRenameDocument } from '../../document/useDocument';
 import Modal from '../../../components/ui/Modal';
+import { Activity as ActivityIcon } from 'lucide-react';
 
 const menuItemStyle = {
     display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
@@ -192,6 +193,10 @@ function WorkspacePage() {
                     <Link to={`/workspaces/${workspaceId}/trash`} className="ds-btn ds-btn-ghost" style={{ textDecoration: 'none', gap: '6px' }}>
                         <Trash2 size={15} />
                         Trash
+                    </Link>
+                    <Link to={`/workspaces/${workspaceId}/activity`} className="ds-btn ds-btn-ghost" style={{ textDecoration: 'none', gap: '6px' }}>
+                        <ActivityIcon size={15} />
+                        Activity
                     </Link>
                 </div>
                 {/* Google color accent line */}

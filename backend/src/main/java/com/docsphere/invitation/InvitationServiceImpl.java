@@ -1,5 +1,8 @@
 package com.docsphere.invitation;
 
+import com.docsphere.activity.ActivityAction;
+import com.docsphere.activity.ActivityEntityType;
+import com.docsphere.activity.ActivityLogService;
 import com.docsphere.common.exception.BadRequestException;
 import com.docsphere.common.exception.ResourceNotFoundException;
 import com.docsphere.common.exception.UnauthorizedException;
@@ -32,6 +35,7 @@ public class InvitationServiceImpl implements InvitationService {
     private final UserRepository userRepository;
     private final InvitationMapper invitationMapper;
     private final EmailService emailService;
+    private final ActivityLogService activityLogService;
 
     @Override
     @Transactional
@@ -72,6 +76,15 @@ public class InvitationServiceImpl implements InvitationService {
                 .build();
 
         Invitation savedInvitation = invitationRepository.save(invitation);
+
+        activityLogService.logActivity(
+                workspace,
+                inviter,
+                ActivityAction.INVITED,
+                ActivityEntityType.MEMBER,
+                savedInvitation.getId(),
+                request.getEmail()
+        );
 
         emailService.sendInvitationEmail(
                 request.getEmail(),
@@ -136,6 +149,15 @@ public class InvitationServiceImpl implements InvitationService {
                 .build();
 
         memberRepository.save(member);
+
+        activityLogService.logActivity(
+                invitation.getWorkspace(),
+                user,
+                ActivityAction.JOINED,
+                ActivityEntityType.MEMBER,
+                user.getId(),
+                user.getName()
+        );
 
         invitation.setStatus(InvitationStatus.ACCEPTED);
         invitationRepository.save(invitation);

@@ -1,5 +1,8 @@
 package com.docsphere.member;
 
+import com.docsphere.activity.ActivityAction;
+import com.docsphere.activity.ActivityEntityType;
+import com.docsphere.activity.ActivityLogService;
 import com.docsphere.common.exception.BadRequestException;
 import com.docsphere.common.exception.ResourceNotFoundException;
 import com.docsphere.common.exception.UnauthorizedException;
@@ -25,6 +28,7 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
     private final WorkspaceRepository workspaceRepository;
     private final UserRepository userRepository;
     private final WorkspaceMemberMapper memberMapper;
+    private final ActivityLogService activityLogService;
 
     @Override
     public List<MemberDto> getWorkspaceMembers(UUID workspaceId) {
@@ -46,6 +50,7 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
             UpdateRoleRequest request
     ) {
         Workspace workspace = getWorkspaceOrThrow(workspaceId);
+        User requester = getUserOrThrow(requesterId);
 
         verifyOwnerOrAdmin(workspace, requesterId);
 
@@ -65,6 +70,15 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
         member.setRole(request.getRole());
         WorkspaceMember updatedMember = memberRepository.save(member);
 
+        activityLogService.logActivity(
+                workspace,
+                requester,
+                ActivityAction.UPDATED,
+                ActivityEntityType.MEMBER,
+                targetUser.getId(),
+                targetUser.getName() + " → " + request.getRole()
+        );
+
         return memberMapper.toDto(updatedMember);
     }
 
@@ -72,6 +86,7 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
     @Transactional
     public void removeMember(UUID workspaceId, UUID memberUserId, UUID requesterId) {
         Workspace workspace = getWorkspaceOrThrow(workspaceId);
+        User reqester = getUserOrThrow(requesterId);
 
         verifyOwnerOrAdmin(workspace, requesterId);
 
@@ -83,6 +98,15 @@ public class WorkspaceMemberServiceImpl implements WorkspaceMemberService {
         if (member.getRole() == WorkspaceRole.OWNER) {
             throw new BadRequestException("Cannot remove the workspace owner");
         }
+
+        activityLogService.logActivity(
+                workspace,
+                reqester,
+                ActivityAction.DELETED,
+                ActivityEntityType.MEMBER,
+                targetUser.getId(),
+                targetUser.getName()
+        );
 
         memberRepository.delete(member);
     }

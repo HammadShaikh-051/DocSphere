@@ -120,15 +120,43 @@ public class DocumentServiceImpl implements DocumentService {
 
         verifyCanEdit(document.getWorkspace(), requester);
 
+        boolean titleChanged = !java.util.Objects.equals(document.getTitle(), request.getTitle());
+        boolean contentChanged = request.getContent() != null;
+
         document.setTitle(request.getTitle());
 
-        if (request.getContent() != null) {
+        if (contentChanged) {
             document.setContent(request.getContent());
         }
 
         document.setLastUpdatedBy(requester);
 
         Document updatedDocument = documentRepository.save(document);
+
+        // Log a RENAMED event when only the title was changed
+        if (titleChanged && !contentChanged) {
+            activityLogService.logActivity(
+                    document.getWorkspace(),
+                    requester,
+                    ActivityAction.RENAMED,
+                    ActivityEntityType.DOCUMENT,
+                    updatedDocument.getId(),
+                    updatedDocument.getTitle()
+            );
+        }
+
+        // Log an UPDATED event only when the frontend explicitly requests it
+        // (i.e. the user navigated away / closed the document)
+        if (Boolean.TRUE.equals(request.getLogEdit()) && contentChanged) {
+            activityLogService.logActivity(
+                    document.getWorkspace(),
+                    requester,
+                    ActivityAction.UPDATED,
+                    ActivityEntityType.DOCUMENT,
+                    updatedDocument.getId(),
+                    updatedDocument.getTitle()
+            );
+        }
 
         return documentMapper.toDto(updatedDocument);
     }
@@ -139,6 +167,15 @@ public class DocumentServiceImpl implements DocumentService {
         Document document = getDocumentOrThrow(documentId);
         User requester = getUserOrThrow(requesterId);
         verifyCanEdit(document.getWorkspace(), requester);
+
+        activityLogService.logActivity(
+                document.getWorkspace(),
+                requester,
+                ActivityAction.DELETED,
+                ActivityEntityType.DOCUMENT,
+                document.getId(),
+                document.getTitle()
+        );
 
         document.setDeletedAt(LocalDateTime.now());
         documentRepository.save(document);
@@ -153,6 +190,15 @@ public class DocumentServiceImpl implements DocumentService {
 
         document.setDeletedAt(null);
         documentRepository.save(document);
+
+        activityLogService.logActivity(
+                document.getWorkspace(),
+                requester,
+                ActivityAction.RESTORED,
+                ActivityEntityType.DOCUMENT,
+                document.getId(),
+                document.getTitle()
+        );
     }
 
     @Override

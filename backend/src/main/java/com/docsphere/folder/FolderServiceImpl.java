@@ -128,6 +128,15 @@ public class FolderServiceImpl implements FolderService {
         folder.setName(newName);
         Folder updatedFolder = folderRepository.save(folder);
 
+        activityLogService.logActivity(
+                folder.getWorkspace(),
+                requester,
+                ActivityAction.RENAMED,
+                ActivityEntityType.FOLDER,
+                updatedFolder.getId(),
+                updatedFolder.getName()
+        );
+
         return folderMapper.toDto(updatedFolder);
     }
 
@@ -138,6 +147,15 @@ public class FolderServiceImpl implements FolderService {
         User requester = getUserOrThrow(requesterId);
 
         verifyCanEdit(folder.getWorkspace(), requester);
+
+        activityLogService.logActivity(
+                folder.getWorkspace(),
+                requester,
+                ActivityAction.DELETED,
+                ActivityEntityType.FOLDER,
+                folder.getId(),
+                folder.getName()
+        );
 
         softDeleteFolderRecursively(folder);
     }
@@ -170,6 +188,15 @@ public class FolderServiceImpl implements FolderService {
         verifyCanEdit(folder.getWorkspace(), requester);
 
         restoreFolderRecursively(folder);
+
+        activityLogService.logActivity(
+                folder.getWorkspace(),
+                requester,
+                ActivityAction.RESTORED,
+                ActivityEntityType.FOLDER,
+                folder.getId(),
+                folder.getName()
+        );
     }
 
     private void restoreFolderRecursively(Folder folder) {

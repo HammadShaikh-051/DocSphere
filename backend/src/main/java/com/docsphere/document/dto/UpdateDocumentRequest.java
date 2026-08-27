@@ -19,4 +19,6 @@ public class UpdateDocumentRequest {
     private String title;
 
     private Map<String, Object> content;
+
+    private Boolean logEdit;
 }

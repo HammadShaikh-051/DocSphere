@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { History } from 'lucide-react';
+import { History, BookmarkPlus } from 'lucide-react';
 import { useDocumentDetail, useUpdateDocument } from '../useDocument';
+import { useSaveVersion } from '../useVersion';
 import DocumentEditor from '../components/DocumentEditor';
 import AttachmentPanel from '../../attachment/components/AttachmentPanel';
 import CommentPanel from '../../comment/components/CommentPanel';
@@ -12,22 +13,28 @@ function DocumentPage() {
 
     const { data, isLoading } = useDocumentDetail(documentId);
     const updateDocumentMutation = useUpdateDocument(documentId);
+    const saveVersionMutation = useSaveVersion(documentId);
 
     const [title, setTitle] = useState('');
     const [content, setContent] = useState(null);
     const [saveStatus, setSaveStatus] = useState('saved');
 
-    // Controls whether the Version History panel is visible
+    // ── Version History panel visibility
     const [showVersionHistory, setShowVersionHistory] = useState(false);
+
+    // ── Save Version UI state
+    // showSaveVersionBox: whether the inline "Save Version" form is open
+    const [showSaveVersionBox, setShowSaveVersionBox] = useState(false);
+    // description typed by the user (optional)
+    const [versionDescription, setVersionDescription] = useState('');
+    // feedback shown after a save attempt: null | { type: 'success'|'error', message: string }
+    const [versionSaveStatus, setVersionSaveStatus] = useState(null);
 
     const debounceTimer = useRef(null);
     const isFirstLoad = useRef(true);
-    // tracks whether the user changed content during this session
     const wasEdited = useRef(false);
-    // always holds the latest title/content so the close handler can read them
     const latestTitle = useRef('');
     const latestContent = useRef(null);
-    // stable ref to the mutation so effects with [] can still call the latest version
     const mutationRef = useRef(null);
     mutationRef.current = updateDocumentMutation;
 
@@ -43,13 +50,10 @@ function DocumentPage() {
         }
     }, [document]);
 
-    // flushRef always holds the latest flush logic; updated every render.
-    // Using a ref means the [] effects below never need it as a dependency,
-    // so cleanup only fires on actual unmount / actual visibilitychange.
     const flushRef = useRef(null);
     flushRef.current = () => {
         if (!wasEdited.current) return;
-        wasEdited.current = false; // clear first to prevent double-fire
+        wasEdited.current = false;
         if (debounceTimer.current) {
             clearTimeout(debounceTimer.current);
             debounceTimer.current = null;
@@ -63,12 +67,10 @@ function DocumentPage() {
         );
     };
 
-    // SPA navigation unmount — fires ONLY when component actually unmounts
     useEffect(() => {
         return () => { flushRef.current?.(); };
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Tab switch / window minimise / browser close — registered once
     useEffect(() => {
         const handler = () => {
             if (window.document.visibilityState === 'hidden') {
@@ -108,38 +110,79 @@ function DocumentPage() {
     const handleContentChange = (newContent) => {
         setContent(newContent);
         latestContent.current = newContent;
-        wasEdited.current = true; // mark that content was actually changed
+        wasEdited.current = true;
         scheduleSave(title, newContent);
     };
 
-    /**
-     * handleVersionRestore
-     *
-     * Called by VersionHistoryPanel when a version restore succeeds.
-     * The backend returns the updated DocumentDto — we update our local
-     * title and content state so the TipTap editor immediately reflects
-     * the restored content without a page reload.
-     *
-     * We also reset wasEdited and clear the debounce so the restored
-     * content isn't immediately autosaved back as a new version.
-     */
     const handleVersionRestore = (updatedDoc) => {
         if (!updatedDoc) return;
 
-        // Cancel any pending autosave
         if (debounceTimer.current) {
             clearTimeout(debounceTimer.current);
             debounceTimer.current = null;
         }
         wasEdited.current = false;
 
-        // Update local state — this triggers DocumentEditor to re-render
-        // with the restored content
         setTitle(updatedDoc.title);
         setContent(updatedDoc.content);
         latestTitle.current = updatedDoc.title;
         latestContent.current = updatedDoc.content;
         setSaveStatus('saved');
+    };
+
+    /**
+     * handleSaveVersion
+     *
+     * Called when the user confirms the Save Version action.
+     *
+     * Flow:
+     * 1. If there is a pending autosave (debounce timer still running),
+     *    flush it immediately before creating the version.
+     *    Why? The backend creates the version from what's in the database.
+     *    If the latest edits haven't been autosaved yet, the version would
+     *    not include those edits. Flushing first ensures the DB is current.
+     * 2. Call the saveVersionMutation with the description.
+     * 3. Show inline success/error feedback.
+     * 4. Auto-open the Version History panel so the user can see the new version.
+     */
+    const handleSaveVersion = () => {
+        // Flush any pending autosave before versioning
+        if (wasEdited.current || debounceTimer.current) {
+            flushRef.current?.();
+            // Give autosave ~600ms to land before versioning.
+            // The backend creates the version from the current DB state —
+            // if autosave hasn't committed yet, the version would miss the last edits.
+            setTimeout(() => doSaveVersion(), 650);
+        } else {
+            doSaveVersion();
+        }
+    };
+
+    const doSaveVersion = () => {
+        const desc = versionDescription.trim() || undefined;
+
+        saveVersionMutation.mutate(
+            { description: desc },
+            {
+                onSuccess: (responseData) => {
+                    const versionNum = responseData?.data?.versionNumber;
+                    setVersionSaveStatus({
+                        type: 'success',
+                        message: `✓ Version ${versionNum ?? ''} saved`,
+                    });
+                    setVersionDescription('');
+                    setShowSaveVersionBox(false);
+                    // Auto-open history panel so the user sees the new version immediately
+                    setShowVersionHistory(true);
+                    setTimeout(() => setVersionSaveStatus(null), 4000);
+                },
+                onError: (error) => {
+                    const msg = error?.response?.data?.message || 'Failed to save version.';
+                    setVersionSaveStatus({ type: 'error', message: `✕ ${msg}` });
+                    setTimeout(() => setVersionSaveStatus(null), 5000);
+                },
+            }
+        );
     };
 
     const saveBadgeClass = {
@@ -165,7 +208,7 @@ function DocumentPage() {
 
     return (
         <div style={{ maxWidth: '760px', margin: '0 auto' }}>
-            {/* Title + Save Status + History Toggle */}
+            {/* ── Document Header ─────────────────────────────────────────── */}
             <div className="document-header">
                 <input
                     type="text"
@@ -188,7 +231,36 @@ function DocumentPage() {
                     {saveLabel[saveStatus]}
                 </span>
 
-                {/* Version History toggle button */}
+                {/* Save Version button */}
+                <button
+                    id="save-version-btn"
+                    onClick={() => {
+                        setShowSaveVersionBox((prev) => !prev);
+                        setVersionSaveStatus(null);
+                    }}
+                    title="Save a named version snapshot"
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        color: showSaveVersionBox ? 'white' : 'var(--text-secondary)',
+                        background: showSaveVersionBox ? 'var(--g-blue)' : 'var(--surface-2)',
+                        border: 'none',
+                        borderRadius: 'var(--radius-sm)',
+                        padding: '5px 10px',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.2s, color 0.2s',
+                        fontFamily: 'inherit',
+                        whiteSpace: 'nowrap',
+                    }}
+                >
+                    <BookmarkPlus size={13} />
+                    Save Version
+                </button>
+
+                {/* Version History toggle */}
                 <button
                     id="version-history-toggle"
                     onClick={() => setShowVersionHistory((prev) => !prev)}
@@ -209,28 +281,77 @@ function DocumentPage() {
                         fontFamily: 'inherit',
                         whiteSpace: 'nowrap',
                     }}
-                    onMouseEnter={(e) => {
-                        if (!showVersionHistory) {
-                            e.currentTarget.style.backgroundColor = 'var(--accent-light)';
-                            e.currentTarget.style.color = 'var(--g-blue)';
-                        }
-                    }}
-                    onMouseLeave={(e) => {
-                        if (!showVersionHistory) {
-                            e.currentTarget.style.backgroundColor = 'var(--surface-2)';
-                            e.currentTarget.style.color = 'var(--text-secondary)';
-                        }
-                    }}
                 >
                     <History size={13} />
                     History
                 </button>
             </div>
 
-            {/* Editor */}
+            {/* ── Save Version inline form ─────────────────────────────── */}
+            {showSaveVersionBox && (
+                <div className="save-version-box">
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '10px' }}>
+                        Save a snapshot of the document's current state.
+                    </p>
+                    <div className="form-group" style={{ marginBottom: '12px' }}>
+                        <label
+                            htmlFor="version-description"
+                            style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}
+                        >
+                            Description <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span>
+                        </label>
+                        <input
+                            id="version-description"
+                            type="text"
+                            value={versionDescription}
+                            onChange={(e) => setVersionDescription(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveVersion();
+                                if (e.key === 'Escape') setShowSaveVersionBox(false);
+                            }}
+                            placeholder="e.g. Completed intro section"
+                            maxLength={500}
+                            autoFocus
+                            className="ds-input"
+                            style={{ fontSize: '13px' }}
+                        />
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        <button
+                            id="save-version-cancel"
+                            onClick={() => { setShowSaveVersionBox(false); setVersionDescription(''); }}
+                            className="ds-btn ds-btn-ghost"
+                            style={{ fontSize: '13px' }}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            id="save-version-confirm"
+                            onClick={handleSaveVersion}
+                            disabled={saveVersionMutation.isPending}
+                            className="ds-btn ds-btn-primary"
+                            style={{ fontSize: '13px' }}
+                        >
+                            {saveVersionMutation.isPending ? '⟳ Saving…' : 'Save Version'}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Version save feedback (shown briefly after save/error) */}
+            {versionSaveStatus && (
+                <div
+                    className={`ds-alert ${versionSaveStatus.type === 'success' ? 'ds-alert-green' : 'ds-alert-red'}`}
+                    style={{ marginBottom: '12px', fontSize: '13px' }}
+                >
+                    {versionSaveStatus.message}
+                </div>
+            )}
+
+            {/* ── Editor ──────────────────────────────────────────────── */}
             <DocumentEditor content={content} onUpdate={handleContentChange} />
 
-            {/* Version History Panel — shown below the editor when toggled */}
+            {/* ── Version History Panel ───────────────────────────────── */}
             {showVersionHistory && (
                 <VersionHistoryPanel
                     documentId={documentId}
@@ -238,9 +359,8 @@ function DocumentPage() {
                 />
             )}
 
-            {/* Attachments */}
+            {/* ── Attachments + Comments ──────────────────────────────── */}
             <AttachmentPanel documentId={documentId} />
-
             <CommentPanel documentId={documentId} />
         </div>
     );

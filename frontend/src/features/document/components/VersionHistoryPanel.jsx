@@ -85,9 +85,10 @@ function VersionHistoryPanel({ documentId, onRestore }) {
                         No versions saved yet.
                     </p>
                     <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                        Versions are created when you finish editing a session.
+                        Click <strong>Save Version</strong> in the editor header to create a snapshot.
                     </p>
                 </div>
+
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {versions.map((version, index) => (
@@ -139,7 +140,21 @@ function VersionHistoryPanel({ documentId, onRestore }) {
                                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
                                         {formatRelativeTime(version.createdAt)}
                                     </div>
+                                    {version.description && (
+                                        <div style={{
+                                            fontSize: '12px',
+                                            color: 'var(--text-secondary)',
+                                            marginTop: '3px',
+                                            fontStyle: 'italic',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                        }}>
+                                            "{version.description}"
+                                        </div>
+                                    )}
                                 </div>
+
                             </div>
 
                             {/* Action buttons */}

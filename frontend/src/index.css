@@ -1146,6 +1146,30 @@ body::after {
   border-top: 1px solid var(--border);
 }
 
+/* Save Version inline form box — appears below the document header */
+.save-version-box {
+  margin-bottom: 16px;
+  padding: 16px 20px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--g-blue);
+  border-radius: var(--radius-md);
+  animation: slideDown 0.18s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
 /* Individual version row */
 .version-item {
   display: flex;

@@ -15,5 +15,7 @@ public interface DocumentVersionService {
 
     DocumentDto restoreVersion(UUID documentId, UUID versionId, UUID requesterId);
 
+    DocumentVersionDto createVersion(UUID documentId, UUID requesterId, String description);
+
     void createVersionInternal(Document document, User actor);
 }

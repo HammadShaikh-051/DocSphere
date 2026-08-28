@@ -38,7 +38,6 @@ public class DocumentServiceImpl implements DocumentService {
     private final UserRepository userRepository;
     private final DocumentMapper documentMapper;
     private final ActivityLogService activityLogService;
-    private final DocumentVersionService documentVersionService;
 
     @Override
     @Transactional
@@ -122,10 +121,6 @@ public class DocumentServiceImpl implements DocumentService {
 
         boolean titleChanged = !java.util.Objects.equals(document.getTitle(), request.getTitle());
         boolean contentChanged = request.getContent() != null;
-
-        if (Boolean.TRUE.equals(request.getLogEdit()) && contentChanged) {
-            documentVersionService.createVersionInternal(document, requester);
-        }
 
         document.setTitle(request.getTitle());
 

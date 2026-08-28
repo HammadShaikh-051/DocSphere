@@ -1,6 +1,7 @@
 package com.docsphere.document;
 
 import com.docsphere.common.ApiResponse;
+import com.docsphere.document.dto.CreateVersionRequest;
 import com.docsphere.document.dto.DocumentDto;
 import com.docsphere.document.dto.DocumentVersionDto;
 import com.docsphere.user.CustomUserDetails;
@@ -38,6 +39,19 @@ public class DocumentVersionController {
                                 versionId,
                                 currentUser.getUser().getId());
                 return ResponseEntity.ok(ApiResponse.success("Version fetched successfully", version));
+        }
+
+        @PostMapping("/api/documents/{documentId}/versions")
+        public ResponseEntity<ApiResponse<DocumentVersionDto>> createVersion(
+                        @AuthenticationPrincipal CustomUserDetails currentUser,
+                        @PathVariable UUID documentId,
+                        @RequestBody(required = false) CreateVersionRequest request) {
+                String description = request != null ? request.getDescription() : null;
+                DocumentVersionDto newVersion = versionService.createVersion(
+                                documentId,
+                                currentUser.getUser().getId(),
+                                description);
+                return ResponseEntity.ok(ApiResponse.success("Version saved successfully", newVersion));
         }
 
         @PostMapping("/api/documents/{documentId}/versions/{versionId}/restore")

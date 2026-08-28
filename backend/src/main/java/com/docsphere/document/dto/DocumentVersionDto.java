@@ -17,6 +17,7 @@ public class DocumentVersionDto {
     private Integer versionNumber;
     private String title;
     private Map<String, Object> content;
+    private String description;
 
     private UUID createdById;
     private String createdByName;

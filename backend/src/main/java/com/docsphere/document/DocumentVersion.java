@@ -40,6 +40,9 @@ public class DocumentVersion {
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> content;
 
+    @Column(length = 500)
+    private String description;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;

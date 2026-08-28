@@ -38,6 +38,7 @@ public class DocumentServiceImpl implements DocumentService {
     private final UserRepository userRepository;
     private final DocumentMapper documentMapper;
     private final ActivityLogService activityLogService;
+    private final DocumentVersionService documentVersionService;
 
     @Override
     @Transactional
@@ -74,8 +75,7 @@ public class DocumentServiceImpl implements DocumentService {
                 ActivityAction.CREATED,
                 ActivityEntityType.DOCUMENT,
                 savedDocument.getId(),
-                savedDocument.getTitle()
-        );
+                savedDocument.getTitle());
 
         return documentMapper.toDto(savedDocument);
     }
@@ -123,6 +123,10 @@ public class DocumentServiceImpl implements DocumentService {
         boolean titleChanged = !java.util.Objects.equals(document.getTitle(), request.getTitle());
         boolean contentChanged = request.getContent() != null;
 
+        if (Boolean.TRUE.equals(request.getLogEdit()) && contentChanged) {
+            documentVersionService.createVersionInternal(document, requester);
+        }
+
         document.setTitle(request.getTitle());
 
         if (contentChanged) {
@@ -133,7 +137,6 @@ public class DocumentServiceImpl implements DocumentService {
 
         Document updatedDocument = documentRepository.save(document);
 
-        // Log a RENAMED event when only the title was changed
         if (titleChanged && !contentChanged) {
             activityLogService.logActivity(
                     document.getWorkspace(),
@@ -141,12 +144,9 @@ public class DocumentServiceImpl implements DocumentService {
                     ActivityAction.RENAMED,
                     ActivityEntityType.DOCUMENT,
                     updatedDocument.getId(),
-                    updatedDocument.getTitle()
-            );
+                    updatedDocument.getTitle());
         }
 
-        // Log an UPDATED event only when the frontend explicitly requests it
-        // (i.e. the user navigated away / closed the document)
         if (Boolean.TRUE.equals(request.getLogEdit()) && contentChanged) {
             activityLogService.logActivity(
                     document.getWorkspace(),
@@ -154,8 +154,7 @@ public class DocumentServiceImpl implements DocumentService {
                     ActivityAction.UPDATED,
                     ActivityEntityType.DOCUMENT,
                     updatedDocument.getId(),
-                    updatedDocument.getTitle()
-            );
+                    updatedDocument.getTitle());
         }
 
         return documentMapper.toDto(updatedDocument);
@@ -174,8 +173,7 @@ public class DocumentServiceImpl implements DocumentService {
                 ActivityAction.DELETED,
                 ActivityEntityType.DOCUMENT,
                 document.getId(),
-                document.getTitle()
-        );
+                document.getTitle());
 
         document.setDeletedAt(LocalDateTime.now());
         documentRepository.save(document);
@@ -197,8 +195,7 @@ public class DocumentServiceImpl implements DocumentService {
                 ActivityAction.RESTORED,
                 ActivityEntityType.DOCUMENT,
                 document.getId(),
-                document.getTitle()
-        );
+                document.getTitle());
     }
 
     @Override

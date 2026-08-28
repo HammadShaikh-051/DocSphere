@@ -1139,7 +1139,53 @@ body::after {
   }
 }
 
+/* ─── Version History Panel ───────────────────────────────────────────────── */
+.version-panel {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+/* Individual version row */
+.version-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.version-item:hover {
+  border-color: var(--g-blue);
+  box-shadow: 0 2px 8px rgba(66, 133, 244, 0.08);
+}
+
+/* Button group on the right of each version row */
+.version-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 @media (max-width: 480px) {
+  .version-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .version-item-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+
   .document-header {
     flex-direction: column;
     align-items: flex-start;

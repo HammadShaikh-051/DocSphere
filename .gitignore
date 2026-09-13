@@ -1,0 +1,54 @@
+# ==============================
+# DocSphere Monorepo
+# ==============================
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# ==============================
+# Frontend - Node / Vite
+# ==============================
+
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+
+# Logs
+frontend/*.log
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/lerna-debug.log*
+
+# ==============================
+# Backend - Maven / Spring Boot
+# ==============================
+
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# ==============================
+# IDE / Editors
+# ==============================
+
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings/
+.springBeans
+.sts4-cache
+
+# ==============================
+# OS
+# ==============================
+
+.DS_Store
+Thumbs.db

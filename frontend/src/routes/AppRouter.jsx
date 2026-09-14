@@ -28,6 +28,16 @@ function ProtectedRoute({ children }) {
     return <AppLayout>{children}</AppLayout>;
 }
 
+function DocumentEditorProtectedRoute({ children }) {
+    const isAuthenticated = useAuthStore((state) => !!state.accessToken);
+
+    if (!isAuthenticated) {
+        return <Navigate to="/login" replace />;
+    }
+
+    return children;
+}
+
 function PublicOnlyRoute({ children }) {
     const isAuthenticated = useAuthStore((state) => !!state.accessToken);
 
@@ -97,9 +107,9 @@ function AppRouter() {
                 <Route
                     path="/documents/:documentId"
                     element={
-                        <ProtectedRoute>
+                        <DocumentEditorProtectedRoute>
                             <DocumentPage />
-                        </ProtectedRoute>
+                        </DocumentEditorProtectedRoute>
                     }
                 />
 

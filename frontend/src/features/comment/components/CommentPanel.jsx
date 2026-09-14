@@ -41,28 +41,49 @@ function CommentPanel({ documentId }) {
     };
 
     return (
-        <div style={{ marginTop: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px' }}>
-                <MessageSquare size={15} style={{ color: 'var(--text-secondary)' }} />
-                <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Comments {comments.length > 0 && `(${comments.length})`}
-                </h3>
+        <div
+            style={{
+                background: 'var(--surface-1)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '24px',
+                boxShadow: 'var(--shadow-card)',
+            }}
+        >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <MessageSquare size={16} style={{ color: 'var(--g-blue)' }} />
+                    <h3
+                        style={{
+                            fontSize: '14px',
+                            fontWeight: 700,
+                            color: 'var(--text-secondary)',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.06em',
+                        }}
+                    >
+                        Discussion
+                    </h3>
+                    <span className="ds-badge ds-badge-blue" style={{ fontSize: '11px', padding: '2px 8px' }}>
+                        {comments.length}
+                    </span>
+                </div>
             </div>
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
                 <input
                     type="text"
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Add a comment…"
+                    placeholder="Leave a comment or note for the team…"
                     className="ds-input"
-                    style={{ flex: 1 }}
+                    style={{ flex: 1, padding: '9px 14px', fontSize: '13.5px' }}
                 />
                 <button
                     type="submit"
                     disabled={addCommentMutation.isPending || !newComment.trim()}
                     className="ds-btn ds-btn-primary"
-                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', padding: '9px 16px' }}
                 >
                     <Send size={14} />
                     Post
@@ -70,47 +91,119 @@ function CommentPanel({ documentId }) {
             </form>
 
             {isLoading ? (
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Loading comments…</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)', padding: '16px 0' }}>
+                    <div className="ds-spinner" style={{ width: '16px', height: '16px' }} />
+                    <span style={{ fontSize: '13px' }}>Loading comments…</span>
+                </div>
             ) : comments.length === 0 ? (
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No comments yet. Start the discussion.</p>
+                <div
+                    style={{
+                        padding: '24px 20px',
+                        backgroundColor: 'var(--surface-2)',
+                        border: '1px dashed var(--border)',
+                        borderRadius: 'var(--radius-md)',
+                        textAlign: 'center',
+                    }}
+                >
+                    <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)' }}>No comments yet.</p>
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                        Start the conversation by typing your feedback above.
+                    </p>
+                </div>
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {comments.map((comment) => {
                         const isOwnComment = comment.authorId === currentUser?.id;
 
                         return (
-                            <div key={comment.id} style={{ display: 'flex', gap: '10px' }}>
-                                <div style={{
-                                    width: '28px', height: '28px', borderRadius: '50%',
-                                    background: 'var(--g-blue)', color: 'white',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    fontSize: '11px', fontWeight: 600, flexShrink: 0,
-                                }}>
+                            <div
+                                key={comment.id}
+                                style={{
+                                    display: 'flex',
+                                    gap: '12px',
+                                    padding: '14px 16px',
+                                    background: 'var(--surface-2)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: 'var(--radius-md)',
+                                    transition: 'border-color 0.15s ease',
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        width: '32px',
+                                        height: '32px',
+                                        borderRadius: '50%',
+                                        background: isOwnComment ? 'var(--g-blue)' : 'var(--surface-3)',
+                                        color: isOwnComment ? '#fff' : 'var(--text-primary)',
+                                        border: '1px solid var(--border)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '11.5px',
+                                        fontWeight: 700,
+                                        flexShrink: 0,
+                                    }}
+                                >
                                     {getInitials(comment.authorName)}
                                 </div>
 
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                                            {comment.authorName}
-                                        </span>
-                                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                                            {formatRelativeTime(comment.createdAt)}
-                                        </span>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                                {comment.authorName}
+                                            </span>
+                                            {isOwnComment && (
+                                                <span className="ds-badge ds-badge-blue" style={{ fontSize: '10px', padding: '1px 6px' }}>
+                                                    You
+                                                </span>
+                                            )}
+                                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                                {formatRelativeTime(comment.createdAt)}
+                                            </span>
+                                        </div>
+
+                                        {isOwnComment && (
+                                            <button
+                                                onClick={() => handleDelete(comment)}
+                                                style={{
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    cursor: 'pointer',
+                                                    color: 'var(--text-muted)',
+                                                    padding: '4px',
+                                                    borderRadius: '4px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    transition: 'all 0.15s ease',
+                                                }}
+                                                title="Delete comment"
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.color = 'var(--g-red)';
+                                                    e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.color = 'var(--text-muted)';
+                                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                                }}
+                                            >
+                                                <Trash2 size={13} />
+                                            </button>
+                                        )}
                                     </div>
-                                    <p style={{ fontSize: '13px', color: 'var(--text-primary)', marginTop: '2px', wordBreak: 'break-word' }}>
+                                    <p
+                                        style={{
+                                            fontSize: '13.5px',
+                                            color: 'var(--text-primary)',
+                                            marginTop: '6px',
+                                            wordBreak: 'break-word',
+                                            lineHeight: 1.6,
+                                        }}
+                                    >
                                         {comment.content}
                                     </p>
                                 </div>
-
-                                {isOwnComment && (
-                                    <button
-                                        onClick={() => handleDelete(comment)}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px', flexShrink: 0, height: 'fit-content' }}
-                                    >
-                                        <Trash2 size={13} />
-                                    </button>
-                                )}
                             </div>
                         );
                     })}

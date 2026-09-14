@@ -62,8 +62,15 @@ const ENTITY_LABEL = {
 function StatCard({ icon: Icon, iconBg, iconColor, value, label }) {
     return (
         <div className="dash-stat-card">
-            <div className="dash-stat-icon" style={{ backgroundColor: iconBg }}>
-                <Icon size={17} style={{ color: iconColor }} />
+            <div
+                className="dash-stat-icon"
+                style={{
+                    backgroundColor: iconBg,
+                    color: iconColor,
+                    border: `1px solid ${iconColor}22`,
+                }}
+            >
+                <Icon size={20} />
             </div>
             <div>
                 <div className="dash-stat-value">{value}</div>
@@ -86,35 +93,73 @@ function CreateWorkspaceModal({ onClose }) {
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 420 }}>
+            <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 440 }}>
                 <div className="modal-header">
-                    <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        New Workspace
-                    </h2>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '20px', lineHeight: 1, padding: '2px 6px' }}>
-                        ×
+                    <div>
+                        <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+                            New Workspace
+                        </h2>
+                        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                            Create a collaborative hub for your team and docs
+                        </p>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        style={{
+                            width: '28px',
+                            height: '28px',
+                            borderRadius: '6px',
+                            border: '1px solid var(--border)',
+                            background: 'var(--surface-2)',
+                            color: 'var(--text-secondary)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.15s ease',
+                        }}
+                    >
+                        ✕
                     </button>
                 </div>
                 <div className="modal-body">
                     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                         <div>
-                            <label className="ds-label" htmlFor="dash-ws-name">Workspace name</label>
-                            <input id="dash-ws-name" type="text" className="ds-input" value={name}
+                            <label className="ds-label" htmlFor="dash-ws-name">Workspace Name</label>
+                            <input
+                                id="dash-ws-name"
+                                type="text"
+                                className="ds-input"
+                                value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                placeholder="e.g. Marketing Q3" required autoFocus />
+                                placeholder="e.g. Engineering, Marketing Q3"
+                                required
+                                autoFocus
+                            />
                         </div>
                         <div>
                             <label className="ds-label" htmlFor="dash-ws-desc">
-                                Description <span style={{ fontWeight: 400, opacity: 0.7 }}>(optional)</span>
+                                Description <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional)</span>
                             </label>
-                            <textarea id="dash-ws-desc" className="ds-input" value={description}
+                            <textarea
+                                id="dash-ws-desc"
+                                className="ds-input"
+                                value={description}
                                 onChange={(e) => setDescription(e.target.value)}
-                                placeholder="What's this workspace for?" rows={2}
-                                style={{ resize: 'none', lineHeight: 1.6 }} />
+                                placeholder="What is this workspace for?"
+                                rows={3}
+                                style={{ resize: 'none', lineHeight: 1.6 }}
+                            />
                         </div>
-                        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-                            <button type="button" onClick={onClose} className="ds-btn ds-btn-ghost">Cancel</button>
-                            <button type="submit" className="ds-btn ds-btn-primary" disabled={createWorkspaceMutation.isPending}>
+                        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
+                            <button type="button" onClick={onClose} className="ds-btn ds-btn-ghost">
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className="ds-btn ds-btn-primary"
+                                disabled={createWorkspaceMutation.isPending || !name.trim()}
+                            >
                                 {createWorkspaceMutation.isPending ? 'Creating…' : 'Create Workspace'}
                             </button>
                         </div>
@@ -134,35 +179,39 @@ function ActivityPreview({ onViewAll }) {
         console.error('Recent activity fetch error:', error);
     }
 
-    const logs = (data?.data || []).slice(0, 10);
+    const logs = (data?.data || []).slice(0, 8);
 
     return (
         <div className="dash-section-block">
             <div className="dash-section-block-head">
                 <span className="dash-section-block-title">
-                    <Activity size={13} />
+                    <Activity size={14} style={{ color: 'var(--accent)' }} />
                     Recent Activity
                 </span>
-                <button onClick={onViewAll} className="dash-section-block-link"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                <button
+                    onClick={onViewAll}
+                    className="dash-section-block-link"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                >
                     View all <ArrowRight size={11} />
                 </button>
             </div>
 
             {isLoading ? (
-                <div style={{ padding: '20px 16px', display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-muted)', fontSize: 13 }}>
-                    <div className="ds-spinner" /> Loading…
+                <div style={{ padding: '24px 20px', display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-muted)', fontSize: 13 }}>
+                    <div className="ds-spinner" style={{ width: '16px', height: '16px' }} />
+                    <span>Loading recent activity…</span>
                 </div>
             ) : isError ? (
-                <div style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13, color: 'var(--g-red)' }}>
-                    <span>Failed to load recent activity.</span>
+                <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13, color: 'var(--g-red)' }}>
+                    <span>Failed to load activity.</span>
                     <button onClick={() => refetch()} className="ds-btn ds-btn-ghost" style={{ padding: '4px 8px', fontSize: 12 }}>
                         Retry
                     </button>
                 </div>
             ) : logs.length === 0 ? (
-                <div style={{ padding: '20px 16px', fontSize: 13, color: 'var(--text-muted)' }}>
-                    No activity yet across your workspaces.
+                <div style={{ padding: '24px 20px', fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>
+                    No recent activity across your workspaces.
                 </div>
             ) : (
                 <div className="dash-activity-list">
@@ -172,16 +221,22 @@ function ActivityPreview({ onViewAll }) {
                         const entityLabel = ENTITY_LABEL[log.entityType] || log.entityType?.toLowerCase();
                         return (
                             <div key={log.id} className="dash-activity-item">
-                                <div className="dash-activity-dot" style={{ borderColor: config.color }}>
+                                <div
+                                    className="dash-activity-dot"
+                                    style={{
+                                        borderColor: config.color,
+                                        backgroundColor: `${config.color}15`,
+                                    }}
+                                >
                                     <Icon size={11} style={{ color: config.color }} />
                                 </div>
                                 <div style={{ minWidth: 0, flex: 1 }}>
                                     <p className="dash-activity-text">
-                                        <strong>{log.userName}</strong>{' '}
+                                        <strong style={{ color: 'var(--text-primary)' }}>{log.userName}</strong>{' '}
                                         {log.entityType === 'MEMBER' ? (
-                                            <>{config.verb} <strong>{log.entityName}</strong></>
+                                            <>{config.verb} <strong style={{ color: 'var(--text-primary)' }}>{log.entityName}</strong></>
                                         ) : (
-                                            <>{config.verb} the {entityLabel} <strong>"{log.entityName}"</strong></>
+                                            <>{config.verb} the {entityLabel} <strong style={{ color: 'var(--text-primary)' }}>"{log.entityName}"</strong></>
                                         )}
                                     </p>
                                     <p className="dash-activity-time">
@@ -189,7 +244,7 @@ function ActivityPreview({ onViewAll }) {
                                             <>
                                                 <span
                                                     style={{
-                                                        color: 'var(--text-secondary)',
+                                                        color: 'var(--accent)',
                                                         fontWeight: 600,
                                                         cursor: log.workspaceId ? 'pointer' : 'default',
                                                     }}

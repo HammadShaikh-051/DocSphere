@@ -1,123 +1,248 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FolderOpen, Settings } from 'lucide-react';
-
-const LOGO_LETTERS = ['D','o','c','S','p','h','e','r','e'];
+import {
+    LayoutDashboard,
+    FolderOpen,
+    Activity,
+    Settings,
+    X,
+} from 'lucide-react';
+import { useAuthStore } from '../../store/authStore';
+import DocSphereLogo from '../ui/DocSphereLogo';
 
 function Sidebar({ isOpen, onClose }) {
     const location = useLocation();
+    const user = useAuthStore((state) => state.user);
 
-    const navItems = [
-        { label: 'Dashboard',   path: '/dashboard',   icon: LayoutDashboard, color: 'var(--g-blue)', bg: 'rgba(66, 133, 244, 0.08)' },
-        { label: 'Workspaces',  path: '/workspaces',  icon: FolderOpen,      color: 'var(--g-green)', bg: 'rgba(52, 168, 83, 0.08)' },
-        { label: 'Settings',    path: '/settings',    icon: Settings,        color: 'var(--g-red)', bg: 'rgba(234, 67, 53, 0.08)' },
+    const navSections = [
+        {
+            title: 'WORKSPACE',
+            items: [
+                {
+                    label: 'Dashboard',
+                    path: '/dashboard',
+                    icon: LayoutDashboard,
+                },
+                {
+                    label: 'Workspaces',
+                    path: '/workspaces',
+                    icon: FolderOpen,
+                },
+                {
+                    label: 'Activity',
+                    path: '/activity',
+                    icon: Activity,
+                },
+            ],
+        },
+        {
+            title: 'PREFERENCES',
+            items: [
+                {
+                    label: 'Settings',
+                    path: '/settings',
+                    icon: Settings,
+                },
+            ],
+        },
     ];
 
+    const currentYear = new Date().getFullYear();
+
+    const userInitials = user?.name
+        ? user.name
+              .split(' ')
+              .map((w) => w[0])
+              .join('')
+              .toUpperCase()
+              .slice(0, 2)
+        : '?';
+
     return (
-        <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
-            {/* Logo */}
-            <div className="sidebar-logo">
+        <>
+            {/* Mobile Overlay */}
+            {isOpen && (
                 <div
-                    className="docsphere-logo"
+                    className="sidebar-overlay active"
+                    onClick={onClose}
+                    aria-hidden="true"
+                />
+            )}
+
+            <aside
+                className={`sidebar ${isOpen ? 'open' : ''}`}
+                aria-label="Sidebar navigation"
+            >
+                {/* Brand Header */}
+                <div
                     style={{
-                        fontSize: '20px',
-                        fontWeight: 800,
-                        letterSpacing: '-0.5px',
+                        padding: '16px 18px',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0px',
-                        lineHeight: 1,
-                        userSelect: 'none',
+                        justifyContent: 'space-between',
+                        borderBottom: '1px solid var(--border)',
+                        minHeight: '64px',
                     }}
                 >
-                    {LOGO_LETTERS.map((letter, i) => (
-                        <span key={i}>{letter}</span>
-                    ))}
+                    <Link
+                        to="/dashboard"
+                        onClick={onClose}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            textDecoration: 'none',
+                        }}
+                    >
+                        <DocSphereLogo size={32} subtitle="WORKSPACE" />
+                    </Link>
+
+                    {/* Mobile Close Button */}
+                    <button
+                        onClick={onClose}
+                        className="mobile-close-btn"
+                        aria-label="Close sidebar"
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--text-muted)',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            display: 'none',
+                        }}
+                    >
+                        <X size={18} />
+                    </button>
                 </div>
-                <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '3px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                    Collaborative Workspace
-                </p>
-            </div>
 
-            {/* Navigation */}
+            {/* Navigation Groups */}
             <nav className="sidebar-nav">
-                {navItems.map((item) => {
-                    const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
-                    const Icon = item.icon;
-
-                    return (
-                        <Link
-                            key={item.path}
-                            to={item.path}
-                            className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
-                            onClick={onClose}
+                {navSections.map((section, sIdx) => (
+                    <div key={section.title} style={{ marginBottom: sIdx === 0 ? '16px' : 0 }}>
+                        <div
                             style={{
-                                color: isActive ? item.color : 'var(--text-secondary)',
-                                backgroundColor: isActive ? item.bg : 'transparent',
-                                position: 'relative',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '10px',
-                                padding: '9px 12px',
-                                borderRadius: 'var(--radius-sm)',
-                                textDecoration: 'none',
-                                fontWeight: isActive ? 600 : 500,
-                            }}
-                            onMouseEnter={(e) => {
-                                if (!isActive) {
-                                    e.currentTarget.style.backgroundColor = 'var(--surface-2)';
-                                    e.currentTarget.style.color = 'var(--text-primary)';
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                if (!isActive) {
-                                    e.currentTarget.style.backgroundColor = 'transparent';
-                                    e.currentTarget.style.color = 'var(--text-secondary)';
-                                }
+                                padding: '6px 12px',
+                                fontSize: '10.5px',
+                                fontWeight: 700,
+                                color: 'var(--text-muted)',
+                                letterSpacing: '0.08em',
+                                textTransform: 'uppercase',
                             }}
                         >
-                            {/* Left indicator */}
-                            {isActive && (
-                                <div style={{
-                                    position: 'absolute',
-                                    left: 0,
-                                    top: '20%',
-                                    height: '60%',
-                                    width: '3px',
-                                    backgroundColor: item.color,
-                                    borderRadius: '0 4px 4px 0',
-                                }} />
-                            )}
-                            <Icon
-                                size={17}
-                                style={{ color: isActive ? item.color : 'var(--text-muted)' }}
-                            />
-                            {item.label}
-                        </Link>
-                    );
-                })}
+                            {section.title}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            {section.items.map((item) => {
+                                const isActive =
+                                    location.pathname === item.path ||
+                                    (item.path !== '/dashboard' &&
+                                        location.pathname.startsWith(item.path + '/'));
+                                const Icon = item.icon;
+
+                                return (
+                                    <Link
+                                        key={item.path}
+                                        to={item.path}
+                                        className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
+                                        onClick={onClose}
+                                        style={{
+                                            color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                            backgroundColor: isActive ? item.bg : 'transparent',
+                                            fontWeight: isActive ? 600 : 500,
+                                        }}
+                                    >
+                                        {/* Left active glow bar */}
+                                        {isActive && (
+                                            <div
+                                                style={{
+                                                    position: 'absolute',
+                                                    left: 0,
+                                                    top: '18%',
+                                                    height: '64%',
+                                                    width: '3px',
+                                                    backgroundColor: item.color,
+                                                    borderRadius: '0 4px 4px 0',
+                                                    boxShadow: `0 0 8px ${item.color}`,
+                                                }}
+                                            />
+                                        )}
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                width: '24px',
+                                                height: '24px',
+                                                borderRadius: '6px',
+                                                color: isActive ? item.color : 'var(--text-muted)',
+                                                transition: 'color 0.15s ease',
+                                            }}
+                                        >
+                                            <Icon size={16} />
+                                        </div>
+                                        <span>{item.label}</span>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    </div>
+                ))}
             </nav>
 
-            {/* Bottom decoration */}
-            <div style={{
-                padding: '12px 16px',
-                borderTop: '1px solid var(--border)',
-                display: 'flex',
-                gap: '6px',
-            }}>
-                {['var(--g-blue)','var(--g-red)','var(--g-yellow)','var(--g-green)'].map((c, i) => (
-                    <div
-                        key={i}
-                        style={{
-                            width: '6px',
-                            height: '6px',
-                            borderRadius: '50%',
-                            backgroundColor: c,
-                            opacity: 0.7,
-                        }}
-                    />
-                ))}
+            {/* User Profile Bar at bottom */}
+            <div
+                style={{
+                    padding: '12px 14px',
+                    borderTop: '1px solid var(--border)',
+                    backgroundColor: 'var(--surface-2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '10px',
+                }}
+            >
+                <Link
+                    to="/settings"
+                    onClick={onClose}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        textDecoration: 'none',
+                        minWidth: 0,
+                        flex: 1,
+                    }}
+                >
+                    <div className="avatar" style={{ width: '32px', height: '32px', fontSize: '11px' }}>
+                        {userInitials}
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                        <div
+                            style={{
+                                fontSize: '13px',
+                                fontWeight: 600,
+                                color: 'var(--text-primary)',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                            }}
+                        >
+                            {user?.name || 'User'}
+                        </div>
+                        <div
+                            style={{
+                                fontSize: '11px',
+                                color: 'var(--text-muted)',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                            }}
+                        >
+                            {user?.email || 'Logged in'}
+                        </div>
+                    </div>
+                </Link>
             </div>
         </aside>
+        </>
     );
 }
 

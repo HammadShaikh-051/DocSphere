@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { loginUser } from '../authApi';
 import { useAuthStore } from '../../../store/authStore';
-
-const LOGO_LETTERS = ['D', 'o', 'c', 'S', 'p', 'h', 'e', 'r', 'e'];
+import { ArrowRight, Lock, Mail, AlertCircle } from 'lucide-react';
+import DocSphereLogo from '../../../components/ui/DocSphereLogo';
 
 function LoginPage() {
     const navigate = useNavigate();
@@ -29,7 +29,7 @@ function LoginPage() {
             setUser(user);
             navigate(redirectUrl);
         } catch (err) {
-            setError(err.response?.data?.message || 'Login failed. Please try again.');
+            setError(err.response?.data?.message || 'Invalid email or password. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -37,35 +37,35 @@ function LoginPage() {
 
     return (
         <div className="auth-bg">
-            <div className="auth-card">
-                {/* Logo */}
+            <div className="auth-card" style={{ maxWidth: '420px' }}>
+                {/* Brand Header */}
                 <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-                    <div
-                        className="docsphere-logo"
-                        style={{
-                            fontSize: '28px',
-                            fontWeight: 800,
-                            letterSpacing: '-0.5px',
-                            display: 'inline-flex',
-                            justifyContent: 'center',
-                            lineHeight: 1,
-                            userSelect: 'none',
-                            marginBottom: '6px',
-                        }}
-                    >
-                        {LOGO_LETTERS.map((letter, i) => (
-                            <span key={i}>{letter}</span>
-                        ))}
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+                        <DocSphereLogo size={42} layout="vertical" wordmarkSize="24px" />
                     </div>
-                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                        Sign in to your account
+                    <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', margin: 0 }}>
+                        Welcome back to your workspaces
                     </p>
                 </div>
 
-                {/* Error */}
+                {/* Error Banner */}
                 {error && (
-                    <div className="ds-alert ds-alert-red" style={{ marginBottom: '16px' }}>
-                        {error}
+                    <div
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '10px 14px',
+                            background: 'rgba(239, 68, 68, 0.12)',
+                            border: '1px solid rgba(239, 68, 68, 0.25)',
+                            borderRadius: 'var(--radius-sm)',
+                            color: 'var(--g-red)',
+                            fontSize: '13px',
+                            marginBottom: '20px',
+                        }}
+                    >
+                        <AlertCircle size={15} style={{ flexShrink: 0 }} />
+                        <span>{error}</span>
                     </div>
                 )}
 
@@ -93,7 +93,7 @@ function LoginPage() {
                 {/* Form */}
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <div className="form-group">
-                        <label className="ds-label" htmlFor="login-email">Email address</label>
+                        <label className="ds-label" htmlFor="login-email">Email Address</label>
                         <input
                             id="login-email"
                             type="email"
@@ -102,6 +102,7 @@ function LoginPage() {
                             required
                             placeholder="you@example.com"
                             className="ds-input"
+                            autoComplete="email"
                         />
                     </div>
 
@@ -115,6 +116,7 @@ function LoginPage() {
                             required
                             placeholder="Enter your password"
                             className="ds-input"
+                            autoComplete="current-password"
                         />
                     </div>
 
@@ -122,34 +124,45 @@ function LoginPage() {
                         type="submit"
                         disabled={isLoading}
                         className="ds-btn ds-btn-primary"
-                        style={{ width: '100%', padding: '11px', marginTop: '4px' }}
+                        style={{ width: '100%', padding: '11px', marginTop: '6px', justifyContent: 'center', fontSize: '13.5px' }}
                     >
-                        {isLoading ? 'Signing in...' : 'Sign in'}
+                        {isLoading ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div className="ds-spinner" style={{ width: '16px', height: '16px', borderTopColor: '#fff' }} />
+                                <span>Signing In…</span>
+                            </div>
+                        ) : (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                Sign In <ArrowRight size={15} />
+                            </span>
+                        )}
                     </button>
                 </form>
 
-                {/* Footer */}
-                <p style={{ marginTop: '20px', textAlign: 'center', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                {/* Footer Link */}
+                <p style={{ marginTop: '22px', textAlign: 'center', fontSize: '13px', color: 'var(--text-secondary)' }}>
                     Don't have an account?{' '}
                     <Link
                         to={`/register?redirect=${encodeURIComponent(redirectUrl)}`}
-                        style={{ color: 'var(--g-blue)', textDecoration: 'none', fontWeight: 500 }}
+                        style={{ color: 'var(--g-blue)', textDecoration: 'none', fontWeight: 600 }}
                     >
-                        Create one
+                        Create an account
                     </Link>
                 </p>
 
-                {/* Google color bar */}
-                <div style={{
-                    marginTop: '24px',
-                    height: '3px',
-                    borderRadius: '99px',
-                    background: 'linear-gradient(90deg, var(--g-blue), var(--g-red), var(--g-yellow), var(--g-green))',
-                    opacity: 0.5,
-                }} />
+                {/* Ambient Decorative Bar */}
+                <div
+                    style={{
+                        marginTop: '26px',
+                        height: '2px',
+                        borderRadius: '99px',
+                        background: 'linear-gradient(90deg, var(--g-blue), var(--g-red), var(--g-yellow), var(--g-green))',
+                        opacity: 0.4,
+                    }}
+                />
             </div>
         </div>
     );
 }
 
-export default LoginPage;
+export default LoginPage;

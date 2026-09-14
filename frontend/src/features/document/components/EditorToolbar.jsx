@@ -10,19 +10,19 @@ function ToolbarButton({ icon: Icon, isActive, onClick, title }) {
                 width: '32px',
                 height: '32px',
                 borderRadius: '6px',
-                border: 'none',
+                border: isActive ? '1px solid rgba(59, 130, 246, 0.4)' : '1px solid transparent',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: isActive ? 'var(--accent-light)' : 'transparent',
+                backgroundColor: isActive ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
                 color: isActive ? 'var(--g-blue)' : 'var(--text-secondary)',
-                transition: 'background-color 0.15s, color 0.15s',
+                transition: 'all 0.15s ease',
                 fontFamily: 'inherit',
             }}
             onMouseEnter={(e) => {
                 if (!isActive) {
-                    e.currentTarget.style.backgroundColor = 'var(--surface-2)';
+                    e.currentTarget.style.backgroundColor = 'var(--surface-3)';
                     e.currentTarget.style.color = 'var(--text-primary)';
                 }
             }}
@@ -40,13 +40,15 @@ function ToolbarButton({ icon: Icon, isActive, onClick, title }) {
 
 function Separator() {
     return (
-        <div style={{
-            width: '1px',
-            height: '20px',
-            backgroundColor: 'var(--border)',
-            margin: '0 4px',
-            flexShrink: 0,
-        }} />
+        <div
+            style={{
+                width: '1px',
+                height: '18px',
+                backgroundColor: 'var(--border)',
+                margin: '0 4px',
+                flexShrink: 0,
+            }}
+        />
     );
 }
 
@@ -54,25 +56,17 @@ function EditorToolbar({ editor }) {
     if (!editor) return null;
 
     return (
-        <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '2px',
-            padding: '8px 12px',
-            borderBottom: '1px solid var(--border)',
-            backgroundColor: 'var(--surface-2)',
-            flexWrap: 'wrap',
-        }}>
+        <div className="doc-editor-canvas-toolbar">
             {/* Text formatting */}
             <ToolbarButton
                 icon={Bold}
-                title="Bold"
+                title="Bold (Ctrl+B)"
                 isActive={editor.isActive('bold')}
                 onClick={() => editor.chain().focus().toggleBold().run()}
             />
             <ToolbarButton
                 icon={Italic}
-                title="Italic"
+                title="Italic (Ctrl+I)"
                 isActive={editor.isActive('italic')}
                 onClick={() => editor.chain().focus().toggleItalic().run()}
             />
@@ -110,7 +104,7 @@ function EditorToolbar({ editor }) {
             />
             <ToolbarButton
                 icon={ListOrdered}
-                title="Ordered list"
+                title="Numbered list"
                 isActive={editor.isActive('orderedList')}
                 onClick={() => editor.chain().focus().toggleOrderedList().run()}
             />
@@ -126,7 +120,7 @@ function EditorToolbar({ editor }) {
             {/* Horizontal rule */}
             <ToolbarButton
                 icon={Minus}
-                title="Horizontal rule"
+                title="Divider line"
                 isActive={false}
                 onClick={() => editor.chain().focus().setHorizontalRule().run()}
             />
@@ -134,4 +128,4 @@ function EditorToolbar({ editor }) {
     );
 }
 
-export default EditorToolbar;
+export default EditorToolbar;

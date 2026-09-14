@@ -4,9 +4,9 @@ import { useEffect } from 'react';
 import Modal from '../../../components/ui/Modal';
 import { useDocumentVersion } from '../useVersion';
 import { formatRelativeTime } from '../../../utils/formatRelativeTime';
+import { User, Calendar, FileText } from 'lucide-react';
 
 function VersionPreviewModal({ isOpen, onClose, documentId, versionId }) {
-
     const { data, isLoading } = useDocumentVersion(documentId, versionId);
     const version = data?.data;
 
@@ -35,57 +35,63 @@ function VersionPreviewModal({ isOpen, onClose, documentId, versionId }) {
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title={version ? `Version ${version.versionNumber} — Preview` : 'Version Preview'}
+            title={version ? `Version ${version.versionNumber} Snapshot` : 'Version Preview'}
         >
             {isLoading ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)' }}>
-                    <div className="ds-spinner" />
-                    Loading version…
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)', padding: '24px 0' }}>
+                    <div className="ds-spinner" style={{ width: '16px', height: '16px' }} />
+                    <span style={{ fontSize: '13px' }}>Loading version details…</span>
                 </div>
             ) : version ? (
                 <div>
-                    <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '6px',
-                        marginBottom: '16px',
-                        padding: '12px',
-                        backgroundColor: 'var(--surface-2)',
-                        borderRadius: 'var(--radius-md)',
-                        fontSize: '13px',
-                    }}>
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                            <span style={{ color: 'var(--text-muted)', minWidth: '70px' }}>Version</span>
-                            <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
-                                #{version.versionNumber}
-                            </span>
+                    <div
+                        style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                            gap: '12px',
+                            marginBottom: '16px',
+                            padding: '14px 16px',
+                            backgroundColor: 'var(--surface-2)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius-md)',
+                            fontSize: '12.5px',
+                        }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <User size={14} style={{ color: 'var(--g-blue)' }} />
+                            <div>
+                                <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>Author</div>
+                                <div style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{version.createdByName}</div>
+                            </div>
                         </div>
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                            <span style={{ color: 'var(--text-muted)', minWidth: '70px' }}>Edited by</span>
-                            <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
-                                {version.createdByName}
-                            </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Calendar size={14} style={{ color: 'var(--g-yellow)' }} />
+                            <div>
+                                <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>Snapshot Created</div>
+                                <div style={{ color: 'var(--text-secondary)' }}>{formatRelativeTime(version.createdAt)}</div>
+                            </div>
                         </div>
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                            <span style={{ color: 'var(--text-muted)', minWidth: '70px' }}>Saved</span>
-                            <span style={{ color: 'var(--text-secondary)' }}>
-                                {formatRelativeTime(version.createdAt)}
-                            </span>
-                        </div>
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                            <span style={{ color: 'var(--text-muted)', minWidth: '70px' }}>Title</span>
-                            <span style={{ color: 'var(--text-primary)' }}>{version.title}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <FileText size={14} style={{ color: 'var(--g-green)' }} />
+                            <div>
+                                <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>Title at Snapshot</div>
+                                <div style={{ color: 'var(--text-primary)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {version.title}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div style={{
-                        border: '1px solid var(--border)',
-                        borderRadius: 'var(--radius-md)',
-                        backgroundColor: 'var(--surface)',
-                        maxHeight: '320px',
-                        overflowY: 'auto',
-                        padding: '16px 20px',
-                    }}>
+                    <div
+                        style={{
+                            border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius-md)',
+                            backgroundColor: 'var(--surface-1)',
+                            maxHeight: '380px',
+                            overflowY: 'auto',
+                            padding: '18px 24px',
+                        }}
+                    >
                         {version.content ? (
                             <EditorContent
                                 editor={editor}
@@ -97,19 +103,22 @@ function VersionPreviewModal({ isOpen, onClose, documentId, versionId }) {
                                 className="ds-editor-content"
                             />
                         ) : (
-                            <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
-                                This version has no content.
+                            <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>
+                                This version has no content recorded.
                             </p>
                         )}
                     </div>
 
-                    <p style={{
-                        marginTop: '12px',
-                        fontSize: '12px',
-                        color: 'var(--text-muted)',
-                        fontStyle: 'italic',
-                    }}>
-                        This is a read-only preview. Click Restore in the history panel to apply this version.
+                    <p
+                        style={{
+                            marginTop: '14px',
+                            fontSize: '12px',
+                            color: 'var(--text-muted)',
+                            fontStyle: 'italic',
+                            textAlign: 'center',
+                        }}
+                    >
+                        This is a read-only preview. To restore your document to this state, use the Restore button in the History panel.
                     </p>
                 </div>
             ) : (

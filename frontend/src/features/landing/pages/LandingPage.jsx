@@ -25,8 +25,7 @@ import {
     Check,
 } from 'lucide-react';
 import { useTheme } from '../../../context/ThemeContext';
-
-const LOGO_LETTERS = ['D', 'o', 'c', 'S', 'p', 'h', 'e', 'r', 'e'];
+import DocSphereLogo from '../../../components/ui/DocSphereLogo';
 
 /* ─── Core Features Data (Real DocSphere capabilities) ─────────────────────── */
 const FEATURES = [
@@ -176,12 +175,8 @@ function LandingPage() {
             <header className="lp-navbar">
                 <div className="lp-nav-content">
                     {/* Brand */}
-                    <div className="lp-brand" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-                        <div className="docsphere-logo lp-logo-text">
-                            {LOGO_LETTERS.map((letter, i) => (
-                                <span key={i}>{letter}</span>
-                            ))}
-                        </div>
+                    <div className="lp-brand" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <DocSphereLogo size={28} wordmarkSize="18px" />
                         <span className="lp-brand-badge">Workspace</span>
                     </div>
 
@@ -331,9 +326,7 @@ function LandingPage() {
                         {/* Sidebar Mockup */}
                         <div className="lp-mockup-sidebar">
                             <div className="lp-mockup-brand">
-                                <div className="docsphere-logo" style={{ fontSize: 15, fontWeight: 700 }}>
-                                    {LOGO_LETTERS.map((l, i) => <span key={i}>{l}</span>)}
-                                </div>
+                                <DocSphereLogo size={18} wordmarkSize="13px" />
                             </div>
                             <div className="lp-mockup-nav-item active">
                                 <FileText size={13} style={{ color: 'var(--g-blue)' }} />
@@ -575,8 +568,8 @@ function LandingPage() {
                 <div className="lp-footer-content">
                     {/* Brand Column */}
                     <div className="lp-footer-brand-col">
-                        <div className="docsphere-logo" style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.5px' }}>
-                            {LOGO_LETTERS.map((l, i) => <span key={i}>{l}</span>)}
+                        <div style={{ marginBottom: '12px' }}>
+                            <DocSphereLogo size={28} wordmarkSize="19px" />
                         </div>
                         <p className="lp-footer-desc">
                             A collaborative workspace for documents, teams, and knowledge.

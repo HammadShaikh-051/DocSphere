@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { registerUser } from '../authApi';
-
-const LOGO_LETTERS = ['D', 'o', 'c', 'S', 'p', 'h', 'e', 'r', 'e'];
+import { ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import DocSphereLogo from '../../../components/ui/DocSphereLogo';
 
 function RegisterPage() {
     const navigate = useNavigate();
@@ -24,10 +24,10 @@ function RegisterPage() {
 
         try {
             const result = await registerUser({ name, email, password });
-            setSuccessMessage(result.message);
+            setSuccessMessage(result.message || 'Account created successfully! Check your email to verify.');
             setTimeout(() => navigate(`/login?redirect=${encodeURIComponent(redirectUrl)}`), 2000);
         } catch (err) {
-            setError(err.response?.data?.message || 'Registration failed. Please try again.');
+            setError(err.response?.data?.message || 'Registration failed. Please check your details and try again.');
         } finally {
             setIsLoading(false);
         }
@@ -35,40 +35,54 @@ function RegisterPage() {
 
     return (
         <div className="auth-bg">
-            <div className="auth-card">
-                {/* Logo */}
+            <div className="auth-card" style={{ maxWidth: '420px' }}>
+                {/* Brand Header */}
                 <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-                    <div
-                        className="docsphere-logo"
-                        style={{
-                            fontSize: '28px',
-                            fontWeight: 800,
-                            letterSpacing: '-0.5px',
-                            display: 'inline-flex',
-                            justifyContent: 'center',
-                            lineHeight: 1,
-                            userSelect: 'none',
-                            marginBottom: '6px',
-                        }}
-                    >
-                        {LOGO_LETTERS.map((letter, i) => (
-                            <span key={i}>{letter}</span>
-                        ))}
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+                        <DocSphereLogo size={42} layout="vertical" wordmarkSize="24px" />
                     </div>
-                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                        Create your free account
+                    <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', margin: 0 }}>
+                        Create your free DocSphere account
                     </p>
                 </div>
 
-                {/* Error / Success */}
+                {/* Alerts */}
                 {error && (
-                    <div className="ds-alert ds-alert-red" style={{ marginBottom: '16px' }}>
-                        {error}
+                    <div
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '10px 14px',
+                            background: 'rgba(239, 68, 68, 0.12)',
+                            border: '1px solid rgba(239, 68, 68, 0.25)',
+                            borderRadius: 'var(--radius-sm)',
+                            color: 'var(--g-red)',
+                            fontSize: '13px',
+                            marginBottom: '20px',
+                        }}
+                    >
+                        <AlertCircle size={15} style={{ flexShrink: 0 }} />
+                        <span>{error}</span>
                     </div>
                 )}
                 {successMessage && (
-                    <div className="ds-alert ds-alert-green" style={{ marginBottom: '16px' }}>
-                        {successMessage}
+                    <div
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '10px 14px',
+                            background: 'rgba(52, 168, 83, 0.12)',
+                            border: '1px solid rgba(52, 168, 83, 0.25)',
+                            borderRadius: 'var(--radius-sm)',
+                            color: 'var(--g-green)',
+                            fontSize: '13px',
+                            marginBottom: '20px',
+                        }}
+                    >
+                        <CheckCircle2 size={15} style={{ flexShrink: 0 }} />
+                        <span>{successMessage}</span>
                     </div>
                 )}
 
@@ -87,7 +101,7 @@ function RegisterPage() {
                         <path fill="#4CAF50" d="M24 44c5.5 0 10.5-1.9 14.3-5.2l-6.6-5.6c-2 1.5-4.7 2.5-7.7 2.5-5.3 0-9.7-3.4-11.3-8.1l-6.5 5C9.6 39.6 16.2 44 24 44z" />
                         <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.6 5.6C41.5 36.3 44 30.6 44 24c0-1.3-.1-2.7-.4-3.5z" />
                     </svg>
-                    Continue with Google
+                    Sign up with Google
                 </button>
 
                 <div className="or-divider" style={{ margin: '20px 0' }}>OR</div>
@@ -95,20 +109,21 @@ function RegisterPage() {
                 {/* Form */}
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <div className="form-group">
-                        <label className="ds-label" htmlFor="reg-name">Full name</label>
+                        <label className="ds-label" htmlFor="reg-name">Full Name</label>
                         <input
                             id="reg-name"
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             required
-                            placeholder="Your name"
+                            placeholder="Your full name"
                             className="ds-input"
+                            autoComplete="name"
                         />
                     </div>
 
                     <div className="form-group">
-                        <label className="ds-label" htmlFor="reg-email">Email address</label>
+                        <label className="ds-label" htmlFor="reg-email">Email Address</label>
                         <input
                             id="reg-email"
                             type="email"
@@ -117,6 +132,7 @@ function RegisterPage() {
                             required
                             placeholder="you@example.com"
                             className="ds-input"
+                            autoComplete="email"
                         />
                     </div>
 
@@ -131,6 +147,7 @@ function RegisterPage() {
                             minLength={8}
                             placeholder="At least 8 characters"
                             className="ds-input"
+                            autoComplete="new-password"
                         />
                     </div>
 
@@ -138,34 +155,45 @@ function RegisterPage() {
                         type="submit"
                         disabled={isLoading}
                         className="ds-btn ds-btn-primary"
-                        style={{ width: '100%', padding: '11px', marginTop: '4px' }}
+                        style={{ width: '100%', padding: '11px', marginTop: '6px', justifyContent: 'center', fontSize: '13.5px' }}
                     >
-                        {isLoading ? 'Creating account...' : 'Create account'}
+                        {isLoading ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div className="ds-spinner" style={{ width: '16px', height: '16px', borderTopColor: '#fff' }} />
+                                <span>Creating Account…</span>
+                            </div>
+                        ) : (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                Create Free Account <ArrowRight size={15} />
+                            </span>
+                        )}
                     </button>
                 </form>
 
-                {/* Footer */}
-                <p style={{ marginTop: '20px', textAlign: 'center', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                {/* Footer Link */}
+                <p style={{ marginTop: '22px', textAlign: 'center', fontSize: '13px', color: 'var(--text-secondary)' }}>
                     Already have an account?{' '}
                     <Link
                         to={`/login?redirect=${encodeURIComponent(redirectUrl)}`}
-                        style={{ color: 'var(--g-blue)', textDecoration: 'none', fontWeight: 500 }}
+                        style={{ color: 'var(--g-blue)', textDecoration: 'none', fontWeight: 600 }}
                     >
                         Sign in
                     </Link>
                 </p>
 
-                {/* Google color bar */}
-                <div style={{
-                    marginTop: '24px',
-                    height: '3px',
-                    borderRadius: '99px',
-                    background: 'linear-gradient(90deg, var(--g-green), var(--g-blue), var(--g-red), var(--g-yellow))',
-                    opacity: 0.5,
-                }} />
+                {/* Ambient Decorative Bar */}
+                <div
+                    style={{
+                        marginTop: '26px',
+                        height: '2px',
+                        borderRadius: '99px',
+                        background: 'linear-gradient(90deg, var(--g-green), var(--g-blue), var(--g-red), var(--g-yellow))',
+                        opacity: 0.4,
+                    }}
+                />
             </div>
         </div>
     );
 }
 
-export default RegisterPage;
+export default RegisterPage;

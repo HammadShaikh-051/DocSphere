@@ -1,15 +1,33 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
-import { History, BookmarkPlus } from 'lucide-react';
+import { useParams, Link } from 'react-router-dom';
+import {
+    History,
+    BookmarkPlus,
+    Check,
+    RefreshCw,
+    AlertCircle,
+    ArrowLeft,
+    FileText,
+    Sun,
+    Moon,
+    MessageSquare,
+    Paperclip,
+    Clock,
+    X,
+    Calendar,
+} from 'lucide-react';
 import { useDocumentDetail, useUpdateDocument } from '../useDocument';
 import { useSaveVersion } from '../useVersion';
+import { useTheme } from '../../../context/ThemeContext';
 import DocumentEditor from '../components/DocumentEditor';
 import AttachmentPanel from '../../attachment/components/AttachmentPanel';
 import CommentPanel from '../../comment/components/CommentPanel';
 import VersionHistoryPanel from '../components/VersionHistoryPanel';
+import Modal from '../../../components/ui/Modal';
 
 function DocumentPage() {
     const { documentId } = useParams();
+    const { theme, toggleTheme } = useTheme();
 
     const { data, isLoading } = useDocumentDetail(documentId);
     const updateDocumentMutation = useUpdateDocument(documentId);
@@ -18,16 +36,14 @@ function DocumentPage() {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState(null);
     const [saveStatus, setSaveStatus] = useState('saved');
+    const [stats, setStats] = useState({ words: 0, chars: 0 });
 
     // ── Version History panel visibility
     const [showVersionHistory, setShowVersionHistory] = useState(false);
 
     // ── Save Version UI state
-    // showSaveVersionBox: whether the inline "Save Version" form is open
     const [showSaveVersionBox, setShowSaveVersionBox] = useState(false);
-    // description typed by the user (optional)
     const [versionDescription, setVersionDescription] = useState('');
-    // feedback shown after a save attempt: null | { type: 'success'|'error', message: string }
     const [versionSaveStatus, setVersionSaveStatus] = useState(null);
 
     const debounceTimer = useRef(null);
@@ -69,7 +85,7 @@ function DocumentPage() {
 
     useEffect(() => {
         return () => { flushRef.current?.(); };
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         const handler = () => {
@@ -79,7 +95,7 @@ function DocumentPage() {
         };
         window.document.addEventListener('visibilitychange', handler);
         return () => window.document.removeEventListener('visibilitychange', handler);
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, []);
 
     const saveDocument = (newTitle, newContent, opts = {}) => {
         setSaveStatus('saving');
@@ -130,28 +146,9 @@ function DocumentPage() {
         setSaveStatus('saved');
     };
 
-    /**
-     * handleSaveVersion
-     *
-     * Called when the user confirms the Save Version action.
-     *
-     * Flow:
-     * 1. If there is a pending autosave (debounce timer still running),
-     *    flush it immediately before creating the version.
-     *    Why? The backend creates the version from what's in the database.
-     *    If the latest edits haven't been autosaved yet, the version would
-     *    not include those edits. Flushing first ensures the DB is current.
-     * 2. Call the saveVersionMutation with the description.
-     * 3. Show inline success/error feedback.
-     * 4. Auto-open the Version History panel so the user can see the new version.
-     */
     const handleSaveVersion = () => {
-        // Flush any pending autosave before versioning
         if (wasEdited.current || debounceTimer.current) {
             flushRef.current?.();
-            // Give autosave ~600ms to land before versioning.
-            // The backend creates the version from the current DB state —
-            // if autosave hasn't committed yet, the version would miss the last edits.
             setTimeout(() => doSaveVersion(), 650);
         } else {
             doSaveVersion();
@@ -168,16 +165,15 @@ function DocumentPage() {
                     const versionNum = responseData?.data?.versionNumber;
                     setVersionSaveStatus({
                         type: 'success',
-                        message: `✓ Version ${versionNum ?? ''} saved`,
+                        message: `✓ Version ${versionNum ?? ''} snapshot saved`,
                     });
                     setVersionDescription('');
                     setShowSaveVersionBox(false);
-                    // Auto-open history panel so the user sees the new version immediately
                     setShowVersionHistory(true);
                     setTimeout(() => setVersionSaveStatus(null), 4000);
                 },
                 onError: (error) => {
-                    const msg = error?.response?.data?.message || 'Failed to save version.';
+                    const msg = error?.response?.data?.message || 'Failed to save version snapshot.';
                     setVersionSaveStatus({ type: 'error', message: `✕ ${msg}` });
                     setTimeout(() => setVersionSaveStatus(null), 5000);
                 },
@@ -185,120 +181,246 @@ function DocumentPage() {
         );
     };
 
-    const saveBadgeClass = {
-        saved: 'save-badge save-badge-saved',
-        saving: 'save-badge save-badge-saving',
-        unsaved: 'save-badge save-badge-unsaved',
-        error: 'save-badge save-badge-error',
-    };
-    const saveLabel = {
-        saved: '✓ Saved',
-        saving: '⟳ Saving…',
-        unsaved: '● Unsaved',
-        error: '✕ Failed',
+    const scrollToSection = (id) => {
+        const el = window.document.getElementById(id);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     };
 
     if (isLoading || !document) {
         return (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)' }}>
-                <div className="ds-spinner" /> Loading document…
+            <div className="doc-editor-shell" style={{ alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'var(--text-muted)' }}>
+                    <div className="ds-spinner" style={{ width: 24, height: 24 }} />
+                    <span style={{ fontSize: 14 }}>Opening document in workspace…</span>
+                </div>
             </div>
         );
     }
 
+    const backUrl = document?.folderId && document?.workspaceId
+        ? `/workspaces/${document.workspaceId}/folders/${document.folderId}`
+        : document?.workspaceId
+        ? `/workspaces/${document.workspaceId}`
+        : '/workspaces';
+
+    const formattedDate = document?.updatedAt
+        ? new Date(document.updatedAt).toLocaleDateString(undefined, {
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+          })
+        : null;
+
     return (
-        <div style={{ maxWidth: '760px', margin: '0 auto' }}>
-            {/* ── Document Header ─────────────────────────────────────────── */}
-            <div className="document-header">
-                <input
-                    type="text"
-                    value={title}
-                    onChange={handleTitleChange}
-                    style={{
-                        flex: 1,
-                        fontSize: '26px',
-                        fontWeight: 700,
-                        color: 'var(--text-primary)',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        outline: 'none',
-                        fontFamily: 'inherit',
-                        lineHeight: 1.3,
-                    }}
-                    placeholder="Untitled Document"
-                />
-                <span className={saveBadgeClass[saveStatus]}>
-                    {saveLabel[saveStatus]}
-                </span>
+        <div className="doc-editor-shell">
+            {/* ── 1. DEDICATED FULLSCREEN TOPBAR ─────────────────────────────── */}
+            <header className="doc-editor-header">
+                {/* Left: Back Link & Document Breadcrumb */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                    <Link
+                        to={backUrl}
+                        className="ds-btn ds-btn-ghost"
+                        style={{
+                            padding: '6px 12px',
+                            fontSize: '13px',
+                            gap: '6px',
+                            color: 'var(--text-primary)',
+                            flexShrink: 0,
+                        }}
+                        title="Back to workspace"
+                        id="editor-back-btn"
+                    >
+                        <ArrowLeft size={15} />
+                        <span style={{ fontWeight: 500 }} className="editor-back-text">
+                            {document.workspaceName || 'Workspace'}
+                        </span>
+                    </Link>
 
-                {/* Save Version button */}
-                <button
-                    id="save-version-btn"
-                    onClick={() => {
-                        setShowSaveVersionBox((prev) => !prev);
-                        setVersionSaveStatus(null);
-                    }}
-                    title="Save a named version snapshot"
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                        fontSize: '12px',
-                        fontWeight: 500,
-                        color: showSaveVersionBox ? 'white' : 'var(--text-secondary)',
-                        background: showSaveVersionBox ? 'var(--g-blue)' : 'var(--surface-2)',
-                        border: 'none',
-                        borderRadius: 'var(--radius-sm)',
-                        padding: '5px 10px',
-                        cursor: 'pointer',
-                        transition: 'background-color 0.2s, color 0.2s',
-                        fontFamily: 'inherit',
-                        whiteSpace: 'nowrap',
-                    }}
-                >
-                    <BookmarkPlus size={13} />
-                    Save Version
-                </button>
+                    <div style={{ width: 1, height: 18, background: 'var(--border)', margin: '0 4px', flexShrink: 0 }} />
 
-                {/* Version History toggle */}
-                <button
-                    id="version-history-toggle"
-                    onClick={() => setShowVersionHistory((prev) => !prev)}
-                    title={showVersionHistory ? 'Hide Version History' : 'View Version History'}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                        fontSize: '12px',
-                        fontWeight: 500,
-                        color: showVersionHistory ? 'var(--g-blue)' : 'var(--text-secondary)',
-                        background: showVersionHistory ? 'var(--accent-light)' : 'var(--surface-2)',
-                        border: 'none',
-                        borderRadius: 'var(--radius-sm)',
-                        padding: '5px 10px',
-                        cursor: 'pointer',
-                        transition: 'background-color 0.2s, color 0.2s',
-                        fontFamily: 'inherit',
-                        whiteSpace: 'nowrap',
-                    }}
-                >
-                    <History size={13} />
-                    History
-                </button>
-            </div>
-
-            {/* ── Save Version inline form ─────────────────────────────── */}
-            {showSaveVersionBox && (
-                <div className="save-version-box">
-                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '10px' }}>
-                        Save a snapshot of the document's current state.
-                    </p>
-                    <div className="form-group" style={{ marginBottom: '12px' }}>
-                        <label
-                            htmlFor="version-description"
-                            style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}
+                    <div
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            fontSize: '13px',
+                            color: 'var(--text-secondary)',
+                            minWidth: 0,
+                        }}
+                    >
+                        <FileText size={14} style={{ color: 'var(--g-blue)', flexShrink: 0 }} />
+                        <span
+                            style={{
+                                maxWidth: '240px',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                fontWeight: 500,
+                            }}
                         >
-                            Description <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span>
+                            {title || 'Untitled Document'}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Right: Autosave Status, Snapshot, History, Comments, Theme */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                    {/* Live Autosave Indicator Pill */}
+                    <div
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '4px 10px',
+                            borderRadius: '99px',
+                            background:
+                                saveStatus === 'saved'
+                                    ? 'rgba(16, 185, 129, 0.12)'
+                                    : saveStatus === 'saving'
+                                    ? 'rgba(59, 130, 246, 0.12)'
+                                    : saveStatus === 'unsaved'
+                                    ? 'rgba(245, 158, 11, 0.14)'
+                                    : 'rgba(239, 68, 68, 0.12)',
+                            border: `1px solid ${
+                                saveStatus === 'saved'
+                                    ? 'rgba(16, 185, 129, 0.25)'
+                                    : saveStatus === 'saving'
+                                    ? 'rgba(59, 130, 246, 0.25)'
+                                    : saveStatus === 'unsaved'
+                                    ? 'rgba(245, 158, 11, 0.3)'
+                                    : 'rgba(239, 68, 68, 0.25)'
+                            }`,
+                            fontSize: '12px',
+                            fontWeight: 500,
+                            color:
+                                saveStatus === 'saved'
+                                    ? 'var(--g-green)'
+                                    : saveStatus === 'saving'
+                                    ? 'var(--g-blue)'
+                                    : saveStatus === 'unsaved'
+                                    ? 'var(--g-yellow)'
+                                    : 'var(--g-red)',
+                        }}
+                    >
+                        {saveStatus === 'saved' && <Check size={12} />}
+                        {saveStatus === 'saving' && <RefreshCw size={12} className="ds-spinner" style={{ border: 'none' }} />}
+                        {saveStatus === 'unsaved' && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--g-yellow)' }} />}
+                        {saveStatus === 'error' && <AlertCircle size={12} />}
+                        <span className="editor-status-label" style={{ textTransform: 'capitalize' }}>
+                            {saveStatus === 'saved' ? 'Saved' : saveStatus === 'saving' ? 'Saving…' : saveStatus === 'unsaved' ? 'Unsaved' : 'Save failed'}
+                        </span>
+                    </div>
+
+                    {/* Snapshot Button */}
+                    <button
+                        id="save-version-btn"
+                        onClick={() => {
+                            setShowSaveVersionBox(true);
+                            setVersionSaveStatus(null);
+                        }}
+                        title="Save a named version snapshot"
+                        className="ds-btn ds-btn-ghost"
+                        style={{ fontSize: '12.5px', padding: '6px 10px', gap: '6px' }}
+                    >
+                        <BookmarkPlus size={14} />
+                        <span className="editor-btn-text">Save Version</span>
+                    </button>
+
+                    {/* Version History Button */}
+                    <button
+                        id="version-history-toggle"
+                        onClick={() => setShowVersionHistory((prev) => !prev)}
+                        title={showVersionHistory ? 'Hide Version History' : 'View Version History'}
+                        className={`ds-btn ${showVersionHistory ? 'ds-btn-primary' : 'ds-btn-ghost'}`}
+                        style={{
+                            fontSize: '12.5px',
+                            padding: '6px 10px',
+                            gap: '6px',
+                        }}
+                    >
+                        <History size={14} />
+                        <span className="editor-btn-text">History</span>
+                    </button>
+
+                    {/* Quick Jump to Comments */}
+                    <button
+                        onClick={() => scrollToSection('editor-comments-section')}
+                        title="Jump to Comments"
+                        className="ds-btn ds-btn-ghost"
+                        style={{ padding: '6px 9px', fontSize: '12.5px' }}
+                    >
+                        <MessageSquare size={14} />
+                    </button>
+
+                    {/* Quick Jump to Attachments */}
+                    <button
+                        onClick={() => scrollToSection('editor-attachments-section')}
+                        title="Jump to Attachments"
+                        className="ds-btn ds-btn-ghost"
+                        style={{ padding: '6px 9px', fontSize: '12.5px' }}
+                    >
+                        <Paperclip size={14} />
+                    </button>
+
+                    {/* Theme Toggle in Editor */}
+                    <button
+                        onClick={toggleTheme}
+                        title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                        className="theme-toggle"
+                        style={{ width: '32px', height: '32px' }}
+                        aria-label="Toggle theme"
+                    >
+                        {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+                    </button>
+                </div>
+            </header>
+
+            {/* Version Save Toast Notification */}
+            {versionSaveStatus && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: '68px',
+                        right: '24px',
+                        zIndex: 60,
+                        padding: '10px 16px',
+                        borderRadius: 'var(--radius-md)',
+                        background: versionSaveStatus.type === 'success' ? 'rgba(16, 185, 129, 0.95)' : 'rgba(239, 68, 68, 0.95)',
+                        color: '#fff',
+                        boxShadow: 'var(--shadow-lg)',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        backdropFilter: 'blur(8px)',
+                        animation: 'slideDown 0.2s ease',
+                    }}
+                >
+                    {versionSaveStatus.message}
+                </div>
+            )}
+
+            {/* ── 2. SAVE VERSION SNAPSHOT MODAL ────────────────────────────── */}
+            <Modal
+                isOpen={showSaveVersionBox}
+                onClose={() => {
+                    setShowSaveVersionBox(false);
+                    setVersionDescription('');
+                }}
+                title="Create Version Snapshot"
+            >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
+                        Save a named checkpoint of this document. You can preview and restore back to this snapshot at any time.
+                    </p>
+
+                    <div className="form-group">
+                        <label className="ds-label" htmlFor="version-description" style={{ fontSize: '12.5px' }}>
+                            Snapshot Description <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional)</span>
                         </label>
                         <input
                             id="version-description"
@@ -309,61 +431,143 @@ function DocumentPage() {
                                 if (e.key === 'Enter') handleSaveVersion();
                                 if (e.key === 'Escape') setShowSaveVersionBox(false);
                             }}
-                            placeholder="e.g. Completed intro section"
+                            placeholder="e.g. Completed section 2 and added API specifications"
                             maxLength={500}
                             autoFocus
                             className="ds-input"
-                            style={{ fontSize: '13px' }}
                         />
                     </div>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+
+                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '6px' }}>
                         <button
-                            id="save-version-cancel"
-                            onClick={() => { setShowSaveVersionBox(false); setVersionDescription(''); }}
+                            type="button"
+                            onClick={() => {
+                                setShowSaveVersionBox(false);
+                                setVersionDescription('');
+                            }}
                             className="ds-btn ds-btn-ghost"
-                            style={{ fontSize: '13px' }}
                         >
                             Cancel
                         </button>
                         <button
-                            id="save-version-confirm"
+                            type="button"
                             onClick={handleSaveVersion}
                             disabled={saveVersionMutation.isPending}
                             className="ds-btn ds-btn-primary"
-                            style={{ fontSize: '13px' }}
                         >
-                            {saveVersionMutation.isPending ? '⟳ Saving…' : 'Save Version'}
+                            {saveVersionMutation.isPending ? 'Saving…' : 'Save Version Snapshot'}
                         </button>
                     </div>
                 </div>
-            )}
+            </Modal>
 
-            {/* Version save feedback (shown briefly after save/error) */}
-            {versionSaveStatus && (
-                <div
-                    className={`ds-alert ${versionSaveStatus.type === 'success' ? 'ds-alert-green' : 'ds-alert-red'}`}
-                    style={{ marginBottom: '12px', fontSize: '13px' }}
-                >
-                    {versionSaveStatus.message}
+            {/* ── 3. WORKSPACE AREA & CENTRED DOCUMENT CANVAS ────────────────── */}
+            <main className="doc-editor-workspace">
+                <article className="doc-editor-canvas">
+                    {/* Top Canvas Header: Document Title & Metadata */}
+                    <div className="doc-editor-canvas-header">
+                        <input
+                            type="text"
+                            value={title}
+                            onChange={handleTitleChange}
+                            className="doc-editor-canvas-title"
+                            placeholder="Untitled Document"
+                            aria-label="Document Title"
+                        />
+
+                        {/* Metadata line: Word count, characters, timestamp */}
+                        <div className="doc-editor-meta">
+                            <span className="doc-editor-meta-item">
+                                <FileText size={12} style={{ color: 'var(--g-blue)' }} />
+                                {stats.words} {stats.words === 1 ? 'word' : 'words'}
+                            </span>
+                            <span className="doc-editor-meta-item">
+                                {stats.chars} characters
+                            </span>
+                            {formattedDate && (
+                                <span className="doc-editor-meta-item">
+                                    <Clock size={12} />
+                                    Updated {formattedDate}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Integrated Rich Text Editor (Toolbar + ProseMirror) */}
+                    <DocumentEditor
+                        content={content}
+                        onUpdate={handleContentChange}
+                        onStatsChange={setStats}
+                    />
+                </article>
+
+                {/* ── 4. LOWER SECTIONS: VERSION HISTORY, ATTACHMENTS & COMMENTS ── */}
+                <div className="doc-editor-bottom-section">
+                    {/* Version History Drawer/Section */}
+                    {showVersionHistory && (
+                        <div
+                            style={{
+                                background: 'var(--doc-canvas-bg)',
+                                border: '1px solid var(--doc-canvas-border)',
+                                borderRadius: 'var(--radius-lg)',
+                                padding: '24px',
+                                boxShadow: 'var(--doc-canvas-shadow)',
+                            }}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <History size={18} style={{ color: 'var(--g-blue)' }} />
+                                    <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: 'var(--doc-prose-heading)' }}>
+                                        Version History
+                                    </h3>
+                                </div>
+                                <button
+                                    onClick={() => setShowVersionHistory(false)}
+                                    className="ds-btn ds-btn-ghost"
+                                    style={{ padding: '4px 8px' }}
+                                    title="Close version history"
+                                >
+                                    <X size={15} />
+                                </button>
+                            </div>
+                            <VersionHistoryPanel
+                                documentId={documentId}
+                                onRestore={handleVersionRestore}
+                            />
+                        </div>
+                    )}
+
+                    {/* Attachments Section */}
+                    <div
+                        id="editor-attachments-section"
+                        style={{
+                            background: 'var(--doc-canvas-bg)',
+                            border: '1px solid var(--doc-canvas-border)',
+                            borderRadius: 'var(--radius-lg)',
+                            padding: '24px',
+                            boxShadow: 'var(--doc-canvas-shadow)',
+                        }}
+                    >
+                        <AttachmentPanel documentId={documentId} />
+                    </div>
+
+                    {/* Comments & Discussion Section */}
+                    <div
+                        id="editor-comments-section"
+                        style={{
+                            background: 'var(--doc-canvas-bg)',
+                            border: '1px solid var(--doc-canvas-border)',
+                            borderRadius: 'var(--radius-lg)',
+                            padding: '24px',
+                            boxShadow: 'var(--doc-canvas-shadow)',
+                        }}
+                    >
+                        <CommentPanel documentId={documentId} />
+                    </div>
                 </div>
-            )}
-
-            {/* ── Editor ──────────────────────────────────────────────── */}
-            <DocumentEditor content={content} onUpdate={handleContentChange} />
-
-            {/* ── Version History Panel ───────────────────────────────── */}
-            {showVersionHistory && (
-                <VersionHistoryPanel
-                    documentId={documentId}
-                    onRestore={handleVersionRestore}
-                />
-            )}
-
-            {/* ── Attachments + Comments ──────────────────────────────── */}
-            <AttachmentPanel documentId={documentId} />
-            <CommentPanel documentId={documentId} />
+            </main>
         </div>
     );
 }
 
-export default DocumentPage;
+export default DocumentPage;

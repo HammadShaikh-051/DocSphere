@@ -1,17 +1,23 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Plus, Folder, FileText, Users, Settings, Trash2, MoreVertical, Pencil } from 'lucide-react';
+import {
+    Plus,
+    Folder,
+    FileText,
+    Users,
+    Settings,
+    Trash2,
+    MoreVertical,
+    Pencil,
+    Activity as ActivityIcon,
+    FolderPlus,
+    FilePlus,
+    ArrowRight,
+} from 'lucide-react';
 import { useWorkspaceDetail, useUpdateWorkspace, useDeleteWorkspace } from '../useWorkspace';
 import { useRootFolders, useCreateFolder, useDeleteFolder, useRenameFolder } from '../../folder/useFolder';
 import { useRootDocuments, useCreateDocument, useDeleteDocument, useRenameDocument } from '../../document/useDocument';
 import Modal from '../../../components/ui/Modal';
-import { Activity as ActivityIcon } from 'lucide-react';
-
-const menuItemStyle = {
-    display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
-    padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer',
-    fontSize: '13px', color: 'var(--text-primary)', textAlign: 'left',
-};
 
 function WorkspacePage() {
     const { workspaceId } = useParams();
@@ -98,7 +104,6 @@ function WorkspacePage() {
         e.stopPropagation();
         setOpenMenuId(null);
         if (confirm(`Move "${folder.name}" to trash?`)) {
-            console.log('About to delete folder:', folder.id);
             deleteFolderMutation.mutate(folder.id);
         }
     };
@@ -150,92 +155,114 @@ function WorkspacePage() {
 
     if (isWorkspaceLoading) {
         return (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)' }}>
-                <div className="ds-spinner" /> Loading workspace…
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'var(--text-muted)', padding: '48px 0' }}>
+                <div className="ds-spinner" />
+                <span style={{ fontSize: 14 }}>Loading workspace…</span>
             </div>
         );
     }
 
     return (
         <div>
-            {/* Workspace Header */}
-            <div style={{ marginBottom: '28px' }}>
-                <div className="workspace-header">
-                    {/* <div>
-                        <h1 className="page-title">{workspace?.name}</h1>
-                        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                            {workspace?.description || 'No description'}
-                        </p>
-                    </div> */}
-                    <div className="mb-6 flex items-start justify-between">
-                        <div>
-                            <h1 className="text-2xl font-bold">{workspace?.name}</h1>
-                            <p className="text-gray-500 text-sm mt-1">
-                                {workspace?.description || 'No description'}
-                            </p>
+            {/* ── Workspace Header ────────────────────────────────────────── */}
+            <div
+                style={{
+                    background: 'var(--surface-1)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-lg)',
+                    padding: '24px 28px',
+                    marginBottom: '28px',
+                    boxShadow: 'var(--shadow-card)',
+                }}
+            >
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: '240px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
+                                {workspace?.name}
+                            </h1>
+                            <button
+                                onClick={openSettings}
+                                title="Workspace Settings"
+                                style={{
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '8px',
+                                    border: '1px solid var(--border)',
+                                    background: 'var(--surface-2)',
+                                    color: 'var(--text-secondary)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s ease',
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.color = 'var(--text-primary)';
+                                    e.currentTarget.style.borderColor = 'var(--accent)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.color = 'var(--text-secondary)';
+                                    e.currentTarget.style.borderColor = 'var(--border)';
+                                }}
+                            >
+                                <Settings size={16} />
+                            </button>
                         </div>
-
-                        <button
-                            onClick={openSettings}
-                            className="p-2 text-gray-400 hover:text-gray-600"
-                        >
-                            <Settings size={18} />
-                        </button>
+                        <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginTop: '6px', lineHeight: 1.5, maxWidth: '640px' }}>
+                            {workspace?.description || (
+                                <span style={{ fontStyle: 'italic', opacity: 0.5 }}>No description provided for this workspace.</span>
+                            )}
+                        </p>
                     </div>
-                    <Link
-                        to={`/workspaces/${workspaceId}/members`}
-                        className="ds-btn ds-btn-ghost"
-                        style={{ textDecoration: 'none', gap: '6px' }}
-                    >
-                        <Users size={15} />
-                        Manage Members
-                    </Link>
-                    <Link to={`/workspaces/${workspaceId}/trash`} className="ds-btn ds-btn-ghost" style={{ textDecoration: 'none', gap: '6px' }}>
-                        <Trash2 size={15} />
-                        Trash
-                    </Link>
-                    <Link to={`/workspaces/${workspaceId}/activity`} className="ds-btn ds-btn-ghost" style={{ textDecoration: 'none', gap: '6px' }}>
-                        <ActivityIcon size={15} />
-                        Activity
-                    </Link>
+
+                    {/* Quick navigation buttons */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <Link
+                            to={`/workspaces/${workspaceId}/members`}
+                            className="ds-btn ds-btn-ghost"
+                            style={{ textDecoration: 'none', gap: '6px', fontSize: '13px' }}
+                        >
+                            <Users size={15} style={{ color: 'var(--g-blue)' }} />
+                            Members
+                        </Link>
+                        <Link
+                            to={`/workspaces/${workspaceId}/activity`}
+                            className="ds-btn ds-btn-ghost"
+                            style={{ textDecoration: 'none', gap: '6px', fontSize: '13px' }}
+                        >
+                            <ActivityIcon size={15} style={{ color: 'var(--g-yellow)' }} />
+                            Activity
+                        </Link>
+                        <Link
+                            to={`/workspaces/${workspaceId}/trash`}
+                            className="ds-btn ds-btn-ghost"
+                            style={{ textDecoration: 'none', gap: '6px', fontSize: '13px' }}
+                        >
+                            <Trash2 size={15} style={{ color: 'var(--g-red)' }} />
+                            Trash
+                        </Link>
+                    </div>
                 </div>
-                {/* Google color accent line */}
-                <div style={{
-                    marginTop: '14px',
-                    height: '2px',
-                    borderRadius: '99px',
-                    background: 'linear-gradient(90deg, var(--g-blue), var(--g-red), var(--g-yellow), var(--g-green))',
-                    opacity: 0.4,
-                }} />
             </div>
 
-            {/* ── Folders ── */}
-            <section style={{ marginBottom: '32px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                    <h2 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                        Folders
-                    </h2>
+            {/* ── Folders Section ─────────────────────────────────────────── */}
+            <section style={{ marginBottom: '36px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                            Folders
+                        </h2>
+                        <span className="ds-badge ds-badge-yellow" style={{ fontSize: '11px', padding: '2px 8px' }}>
+                            {folders.length}
+                        </span>
+                    </div>
                     <button
                         onClick={() => setShowFolderForm(true)}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            fontSize: '13px',
-                            color: 'var(--g-blue)',
-                            fontWeight: 500,
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                            padding: '4px 8px',
-                            borderRadius: 'var(--radius-sm)',
-                            transition: 'background-color 0.15s',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-light)'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        className="ds-btn ds-btn-ghost"
+                        style={{ gap: '6px', fontSize: '13px', color: 'var(--accent)' }}
                     >
-                        <Plus size={14} />
+                        <FolderPlus size={15} />
                         New Folder
                     </button>
                 </div>
@@ -243,44 +270,109 @@ function WorkspacePage() {
                 {showFolderForm && (
                     <form
                         onSubmit={handleCreateFolder}
-                        className="inline-form"
-                        style={{ marginBottom: '14px' }}
+                        style={{
+                            background: 'var(--surface-1)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius-md)',
+                            padding: '14px 16px',
+                            marginBottom: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            animation: 'slideDown 0.15s ease',
+                        }}
                     >
                         <input
                             type="text"
                             value={newFolderName}
                             onChange={(e) => setNewFolderName(e.target.value)}
-                            placeholder="Folder name…"
+                            placeholder="Enter folder name…"
                             required
                             className="ds-input"
-                            style={{ flex: 1 }}
+                            style={{ flex: 1, padding: '8px 12px', fontSize: '13px' }}
                             autoFocus
                         />
-                        <button type="submit" className="ds-btn ds-btn-primary" disabled={createFolderMutation.isPending}>
+                        <button type="submit" className="ds-btn ds-btn-primary" disabled={createFolderMutation.isPending || !newFolderName.trim()}>
                             {createFolderMutation.isPending ? 'Creating…' : 'Create'}
                         </button>
-                        <button type="button" className="ds-btn ds-btn-ghost" onClick={() => { setShowFolderForm(false); setNewFolderName(''); }}>
+                        <button
+                            type="button"
+                            className="ds-btn ds-btn-ghost"
+                            onClick={() => { setShowFolderForm(false); setNewFolderName(''); }}
+                        >
                             Cancel
                         </button>
                     </form>
                 )}
 
                 {isFoldersLoading ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '13px' }}>
-                        <div className="ds-spinner" /> Loading folders…
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)', fontSize: '13px', padding: '16px 0' }}>
+                        <div className="ds-spinner" style={{ width: '16px', height: '16px' }} /> Loading folders…
                     </div>
                 ) : folders.length === 0 ? (
-                    <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No folders yet. Create one to organize your documents.</p>
+                    <div
+                        style={{
+                            background: 'var(--surface-1)',
+                            border: '1px dashed var(--border)',
+                            borderRadius: 'var(--radius-md)',
+                            padding: '24px 20px',
+                            textAlign: 'center',
+                            color: 'var(--text-muted)',
+                            fontSize: '13px',
+                        }}
+                    >
+                        No folders yet. Create folders to organize your documents neatly.
+                    </div>
                 ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
+                    <div
+                        style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                            gap: '12px',
+                        }}
+                    >
                         {folders.map((folder) => (
                             <div
                                 key={folder.id}
-                                className="item-card item-card-folder"
                                 onClick={() => renamingId !== folder.id && navigate(`/workspaces/${workspaceId}/folders/${folder.id}`)}
-                                style={{ position: 'relative' }}
+                                style={{
+                                    position: 'relative',
+                                    background: 'var(--surface-1)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: 'var(--radius-md)',
+                                    padding: '12px 14px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    transition: 'all 0.15s ease',
+                                    boxShadow: 'var(--shadow-card)',
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                                    e.currentTarget.style.background = 'var(--surface-2)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.borderColor = 'var(--border)';
+                                    e.currentTarget.style.background = 'var(--surface-1)';
+                                }}
                             >
-                                <Folder size={18} style={{ color: 'var(--g-yellow)', flexShrink: 0 }} />
+                                <div
+                                    style={{
+                                        width: '32px',
+                                        height: '32px',
+                                        borderRadius: '8px',
+                                        background: 'rgba(245, 158, 11, 0.12)',
+                                        border: '1px solid rgba(245, 158, 11, 0.25)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: 'var(--g-yellow)',
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    <Folder size={16} />
+                                </div>
 
                                 {renamingId === folder.id ? (
                                     <form
@@ -293,13 +385,23 @@ function WorkspacePage() {
                                             value={renameValue}
                                             onChange={(e) => setRenameValue(e.target.value)}
                                             className="ds-input"
-                                            style={{ flex: 1, fontSize: '13px', padding: '2px 6px' }}
+                                            style={{ flex: 1, fontSize: '13px', padding: '4px 8px' }}
                                             autoFocus
                                             onBlur={() => setRenamingId(null)}
                                         />
                                     </form>
                                 ) : (
-                                    <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                                    <span
+                                        style={{
+                                            fontSize: '13.5px',
+                                            fontWeight: 600,
+                                            color: 'var(--text-primary)',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                            flex: 1,
+                                        }}
+                                    >
                                         {folder.name}
                                     </span>
                                 )}
@@ -307,27 +409,80 @@ function WorkspacePage() {
                                 <div style={{ position: 'relative' }}>
                                     <button
                                         onClick={(e) => toggleMenu(e, folder.id)}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: 'var(--text-muted)', display: 'flex' }}
+                                        style={{
+                                            width: '28px',
+                                            height: '28px',
+                                            borderRadius: '6px',
+                                            border: 'none',
+                                            background: openMenuId === folder.id ? 'var(--surface-3)' : 'transparent',
+                                            color: 'var(--text-muted)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                        }}
                                     >
-                                        <MoreVertical size={14} />
+                                        <MoreVertical size={15} />
                                     </button>
 
                                     {openMenuId === folder.id && (
                                         <div
                                             onClick={(e) => e.stopPropagation()}
                                             style={{
-                                                position: 'absolute', right: 0, top: '100%', marginTop: '4px',
-                                                background: 'var(--surface)', border: '1px solid var(--border)',
-                                                borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                                                minWidth: '130px', zIndex: 10, overflow: 'hidden',
+                                                position: 'absolute',
+                                                right: 0,
+                                                top: 'calc(100% + 4px)',
+                                                minWidth: '140px',
+                                                background: 'var(--surface-2)',
+                                                border: '1px solid var(--border)',
+                                                borderRadius: 'var(--radius-md)',
+                                                padding: '4px',
+                                                boxShadow: 'var(--shadow-lg)',
+                                                zIndex: 30,
                                             }}
                                         >
-                                            <button onClick={(e) => startRename(e, folder)} style={menuItemStyle}>
-                                                <Pencil size={14} />
+                                            <button
+                                                onClick={(e) => startRename(e, folder)}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    width: '100%',
+                                                    padding: '7px 10px',
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '13px',
+                                                    color: 'var(--text-primary)',
+                                                    textAlign: 'left',
+                                                }}
+                                                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-3)')}
+                                                onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+                                            >
+                                                <Pencil size={13} />
                                                 Rename
                                             </button>
-                                            <button onClick={(e) => handleDeleteFolder(e, folder)} style={{ ...menuItemStyle, color: '#dc2626' }}>
-                                                <Trash2 size={14} />
+                                            <button
+                                                onClick={(e) => handleDeleteFolder(e, folder)}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    width: '100%',
+                                                    padding: '7px 10px',
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '13px',
+                                                    color: 'var(--g-red)',
+                                                    textAlign: 'left',
+                                                }}
+                                                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)')}
+                                                onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+                                            >
+                                                <Trash2 size={13} />
                                                 Delete
                                             </button>
                                         </div>
@@ -339,54 +494,92 @@ function WorkspacePage() {
                 )}
             </section>
 
-            {/* ── Documents ── */}
+            {/* ── Documents Section ───────────────────────────────────────── */}
             <section>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                    <h2 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                        Documents
-                    </h2>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                            Documents
+                        </h2>
+                        <span className="ds-badge ds-badge-blue" style={{ fontSize: '11px', padding: '2px 8px' }}>
+                            {documents.length}
+                        </span>
+                    </div>
                     <button
                         onClick={handleCreateDocument}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            fontSize: '13px',
-                            color: 'var(--g-blue)',
-                            fontWeight: 500,
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                            padding: '4px 8px',
-                            borderRadius: 'var(--radius-sm)',
-                            transition: 'background-color 0.15s',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-light)'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        className="ds-btn ds-btn-primary"
+                        style={{ gap: '6px', fontSize: '13px' }}
                     >
-                        <Plus size={14} />
+                        <FilePlus size={15} />
                         New Document
                     </button>
                 </div>
 
                 {isDocumentsLoading ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '13px' }}>
-                        <div className="ds-spinner" /> Loading documents…
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)', fontSize: '13px', padding: '16px 0' }}>
+                        <div className="ds-spinner" style={{ width: '16px', height: '16px' }} /> Loading documents…
                     </div>
                 ) : documents.length === 0 ? (
-                    <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No documents yet. Create your first document.</p>
+                    <div
+                        style={{
+                            background: 'var(--surface-1)',
+                            border: '1px dashed var(--border)',
+                            borderRadius: 'var(--radius-md)',
+                            padding: '28px 20px',
+                            textAlign: 'center',
+                            color: 'var(--text-muted)',
+                            fontSize: '13px',
+                        }}
+                    >
+                        No documents yet in this workspace. Click "+ New Document" to write your first doc.
+                    </div>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {documents.map((document) => (
                             <div
                                 key={document.id}
-                                className="item-card item-card-document"
                                 onClick={() => renamingDocId !== document.id && navigate(`/documents/${document.id}`)}
-                                style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                                style={{
+                                    position: 'relative',
+                                    background: 'var(--surface-1)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: 'var(--radius-md)',
+                                    padding: '12px 16px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    gap: '12px',
+                                    transition: 'all 0.15s ease',
+                                    boxShadow: 'var(--shadow-card)',
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                                    e.currentTarget.style.background = 'var(--surface-2)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.borderColor = 'var(--border)';
+                                    e.currentTarget.style.background = 'var(--surface-1)';
+                                }}
                             >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
-                                    <FileText size={17} style={{ color: 'var(--g-blue)', flexShrink: 0 }} />
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                                    <div
+                                        style={{
+                                            width: '32px',
+                                            height: '32px',
+                                            borderRadius: '8px',
+                                            background: 'rgba(59, 130, 246, 0.12)',
+                                            border: '1px solid rgba(59, 130, 246, 0.25)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: 'var(--g-blue)',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <FileText size={16} />
+                                    </div>
+
                                     {renamingDocId === document.id ? (
                                         <form
                                             onSubmit={(e) => submitRenameDoc(e, document.id)}
@@ -398,47 +591,115 @@ function WorkspacePage() {
                                                 value={renameDocTitle}
                                                 onChange={(e) => setRenameDocTitle(e.target.value)}
                                                 className="ds-input"
-                                                style={{ flex: 1, fontSize: '13px', padding: '2px 6px' }}
+                                                style={{ flex: 1, fontSize: '13.5px', padding: '4px 8px' }}
                                                 autoFocus
                                                 onBlur={() => setRenamingDocId(null)}
                                             />
                                         </form>
                                     ) : (
-                                        <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        <span
+                                            style={{
+                                                fontSize: '14px',
+                                                fontWeight: 600,
+                                                color: 'var(--text-primary)',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                            }}
+                                        >
                                             {document.title}
                                         </span>
                                     )}
                                 </div>
 
-                                <div style={{ position: 'relative' }}>
-                                    <button
-                                        onClick={(e) => toggleDocMenu(e, document.id)}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: 'var(--text-muted)', display: 'flex' }}
-                                        title="Document options"
-                                    >
-                                        <MoreVertical size={14} />
-                                    </button>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        Open <ArrowRight size={12} />
+                                    </span>
 
-                                    {openDocMenuId === document.id && (
-                                        <div
-                                            onClick={(e) => e.stopPropagation()}
+                                    <div style={{ position: 'relative' }}>
+                                        <button
+                                            onClick={(e) => toggleDocMenu(e, document.id)}
                                             style={{
-                                                position: 'absolute', right: 0, top: '100%', marginTop: '4px',
-                                                background: 'var(--surface)', border: '1px solid var(--border)',
-                                                borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                                                minWidth: '130px', zIndex: 10, overflow: 'hidden',
+                                                width: '28px',
+                                                height: '28px',
+                                                borderRadius: '6px',
+                                                border: 'none',
+                                                background: openDocMenuId === document.id ? 'var(--surface-3)' : 'transparent',
+                                                color: 'var(--text-muted)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                cursor: 'pointer',
                                             }}
+                                            title="Document options"
                                         >
-                                            <button onClick={(e) => startRenameDoc(e, document)} style={menuItemStyle}>
-                                                <Pencil size={14} />
-                                                Rename
-                                            </button>
-                                            <button onClick={(e) => handleDeleteDoc(e, document)} style={{ ...menuItemStyle, color: '#dc2626' }}>
-                                                <Trash2 size={14} />
-                                                Delete
-                                            </button>
-                                        </div>
-                                    )}
+                                            <MoreVertical size={15} />
+                                        </button>
+
+                                        {openDocMenuId === document.id && (
+                                            <div
+                                                onClick={(e) => e.stopPropagation()}
+                                                style={{
+                                                    position: 'absolute',
+                                                    right: 0,
+                                                    top: 'calc(100% + 4px)',
+                                                    minWidth: '140px',
+                                                    background: 'var(--surface-2)',
+                                                    border: '1px solid var(--border)',
+                                                    borderRadius: 'var(--radius-md)',
+                                                    padding: '4px',
+                                                    boxShadow: 'var(--shadow-lg)',
+                                                    zIndex: 30,
+                                                }}
+                                            >
+                                                <button
+                                                    onClick={(e) => startRenameDoc(e, document)}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        width: '100%',
+                                                        padding: '7px 10px',
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        borderRadius: '6px',
+                                                        cursor: 'pointer',
+                                                        fontSize: '13px',
+                                                        color: 'var(--text-primary)',
+                                                        textAlign: 'left',
+                                                    }}
+                                                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-3)')}
+                                                    onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+                                                >
+                                                    <Pencil size={13} />
+                                                    Rename
+                                                </button>
+                                                <button
+                                                    onClick={(e) => handleDeleteDoc(e, document)}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        width: '100%',
+                                                        padding: '7px 10px',
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        borderRadius: '6px',
+                                                        cursor: 'pointer',
+                                                        fontSize: '13px',
+                                                        color: 'var(--g-red)',
+                                                        textAlign: 'left',
+                                                    }}
+                                                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)')}
+                                                    onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+                                                >
+                                                    <Trash2 size={13} />
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -446,49 +707,57 @@ function WorkspacePage() {
                 )}
             </section>
 
+            {/* ── Settings Modal ──────────────────────────────────────────── */}
             <Modal
                 isOpen={showSettings}
                 onClose={() => setShowSettings(false)}
-                title="Workspace settings"
+                title="Workspace Settings"
             >
-                <form onSubmit={handleUpdateWorkspace} className="space-y-4">
+                <form onSubmit={handleUpdateWorkspace} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <div>
-                        <label className="block text-sm font-medium mb-1">Name</label>
+                        <label className="ds-label" htmlFor="ws-settings-name">Workspace Name</label>
                         <input
+                            id="ws-settings-name"
                             type="text"
                             value={editName}
                             onChange={(e) => setEditName(e.target.value)}
                             required
-                            className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="ds-input"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium mb-1">Description</label>
+                        <label className="ds-label" htmlFor="ws-settings-desc">Description</label>
                         <textarea
+                            id="ws-settings-desc"
                             value={editDescription}
                             onChange={(e) => setEditDescription(e.target.value)}
-                            rows={2}
-                            className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                            rows={3}
+                            className="ds-input"
+                            style={{ resize: 'none', lineHeight: 1.6 }}
                         />
                     </div>
 
-                    <button
-                        type="submit"
-                        disabled={updateWorkspaceMutation.isPending}
-                        className="w-full bg-blue-600 text-white py-2 rounded-md text-sm hover:bg-blue-700 disabled:opacity-50"
-                    >
-                        {updateWorkspaceMutation.isPending ? 'Saving...' : 'Save changes'}
-                    </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '8px' }}>
+                        <button
+                            type="submit"
+                            disabled={updateWorkspaceMutation.isPending || !editName.trim()}
+                            className="ds-btn ds-btn-primary"
+                            style={{ width: '100%' }}
+                        >
+                            {updateWorkspaceMutation.isPending ? 'Saving changes…' : 'Save Changes'}
+                        </button>
 
-                    <button
-                        type="button"
-                        onClick={handleDeleteWorkspace}
-                        className="w-full flex items-center justify-center gap-2 text-red-600 border border-red-200 py-2 rounded-md text-sm hover:bg-red-50"
-                    >
-                        <Trash2 size={14} />
-                        Delete workspace
-                    </button>
+                        <button
+                            type="button"
+                            onClick={handleDeleteWorkspace}
+                            className="ds-btn ds-btn-danger"
+                            style={{ width: '100%', gap: '6px', marginTop: '8px' }}
+                        >
+                            <Trash2 size={14} />
+                            Delete Workspace Permanently
+                        </button>
+                    </div>
                 </form>
             </Modal>
         </div>

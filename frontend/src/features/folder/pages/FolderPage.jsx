@@ -1,14 +1,20 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Plus, Folder, FileText, ChevronRight, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import {
+    Plus,
+    Folder,
+    FileText,
+    ChevronRight,
+    MoreVertical,
+    Pencil,
+    Trash2,
+    FolderPlus,
+    FilePlus,
+    ArrowRight,
+    Home,
+} from 'lucide-react';
 import { useFolderDetail, useSubFolders, useCreateSubFolder, useDeleteFolder, useRenameFolder } from '../useFolder';
 import { useFolderDocuments, useCreateDocumentInFolder, useDeleteDocument, useRenameDocument } from '../../document/useDocument';
-
-const menuItemStyle = {
-    display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
-    padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer',
-    fontSize: '13px', color: 'var(--text-primary)', textAlign: 'left',
-};
 
 function FolderPage() {
     const { workspaceId, folderId } = useParams();
@@ -41,15 +47,15 @@ function FolderPage() {
     const deleteDocMutation = useDeleteDocument();
     const renameDocMutation = useRenameDocument();
 
-    const toggleMenu = (e, folderId) => {
+    const toggleMenu = (e, targetFolderId) => {
         e.stopPropagation();
-        setOpenMenuId(openMenuId === folderId ? null : folderId);
+        setOpenMenuId(openMenuId === targetFolderId ? null : targetFolderId);
     };
 
     const handleDeleteSubFolder = (e, sub) => {
         e.stopPropagation();
         setOpenMenuId(null);
-        if (confirm(`Move "${folder.name}" to trash?`)) {
+        if (confirm(`Move "${sub.name}" to trash?`)) {
             deleteFolderMutation.mutate(sub.id);
         }
     };
@@ -61,11 +67,11 @@ function FolderPage() {
         setRenameValue(sub.name);
     };
 
-    const submitRename = (e, folderId) => {
+    const submitRename = (e, targetFolderId) => {
         e.preventDefault();
         e.stopPropagation();
         renameFolderMutation.mutate(
-            { folderId, name: renameValue },
+            { folderId: targetFolderId, name: renameValue },
             { onSuccess: () => setRenamingId(null) }
         );
     };
@@ -118,186 +124,419 @@ function FolderPage() {
 
     if (isFolderLoading) {
         return (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)' }}>
-                <div className="ds-spinner" /> Loading folder…
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'var(--text-muted)', padding: '48px 0' }}>
+                <div className="ds-spinner" />
+                <span style={{ fontSize: 14 }}>Loading folder…</span>
             </div>
         );
     }
 
     return (
         <div>
-            {/* Breadcrumb */}
-            <div className="breadcrumb" style={{ marginBottom: '20px' }}>
-                <Link to={`/workspaces/${workspaceId}`}>Workspace</Link>
+            {/* ── Breadcrumb Navigation ──────────────────────────────────── */}
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginBottom: '20px',
+                    fontSize: '13px',
+                }}
+            >
+                <Link
+                    to={`/workspaces/${workspaceId}`}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        color: 'var(--text-secondary)',
+                        textDecoration: 'none',
+                        fontWeight: 500,
+                        transition: 'color 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                >
+                    <Home size={14} />
+                    <span>Workspace</span>
+                </Link>
                 <ChevronRight size={14} style={{ color: 'var(--text-muted)' }} />
                 <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{folder?.name}</span>
             </div>
 
-            {/* Folder title */}
-            <div style={{ marginBottom: '28px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <Folder size={24} style={{ color: 'var(--g-yellow)' }} />
-                    <h1 className="page-title">{folder?.name}</h1>
+            {/* ── Folder Header ───────────────────────────────────────────── */}
+            <div
+                style={{
+                    background: 'var(--surface-1)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-lg)',
+                    padding: '24px 28px',
+                    marginBottom: '28px',
+                    boxShadow: 'var(--shadow-card)',
+                }}
+            >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    <div
+                        style={{
+                            width: '42px',
+                            height: '42px',
+                            borderRadius: '12px',
+                            background: 'rgba(245, 158, 11, 0.12)',
+                            border: '1px solid rgba(245, 158, 11, 0.25)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--g-yellow)',
+                            flexShrink: 0,
+                        }}
+                    >
+                        <Folder size={22} />
+                    </div>
+                    <div>
+                        <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
+                            {folder?.name}
+                        </h1>
+                        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                            {subFolders.length} subfolder{subFolders.length !== 1 ? 's' : ''} · {documents.length} document{documents.length !== 1 ? 's' : ''}
+                        </p>
+                    </div>
                 </div>
-                <div style={{
-                    marginTop: '12px',
-                    height: '2px',
-                    borderRadius: '99px',
-                    background: 'linear-gradient(90deg, var(--g-yellow), var(--g-blue))',
-                    opacity: 0.4,
-                    width: '120px',
-                }} />
             </div>
 
-            {/* ── Subfolders ── */}
-            <section style={{ marginBottom: '32px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                    <h2 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                        Subfolders
-                    </h2>
+            {/* ── Subfolders Section ──────────────────────────────────────── */}
+            <section style={{ marginBottom: '36px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                            Subfolders
+                        </h2>
+                        <span className="ds-badge ds-badge-yellow" style={{ fontSize: '11px', padding: '2px 8px' }}>
+                            {subFolders.length}
+                        </span>
+                    </div>
                     <button
                         onClick={() => setShowFolderForm(true)}
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: '4px',
-                            fontSize: '13px', color: 'var(--g-blue)', fontWeight: 500,
-                            background: 'none', border: 'none', cursor: 'pointer',
-                            fontFamily: 'inherit', padding: '4px 8px',
-                            borderRadius: 'var(--radius-sm)', transition: 'background-color 0.15s',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-light)'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        className="ds-btn ds-btn-ghost"
+                        style={{ gap: '6px', fontSize: '13px', color: 'var(--accent)' }}
                     >
-                        <Plus size={14} />
+                        <FolderPlus size={15} />
                         New Folder
                     </button>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
-                    {subFolders.map((sub) => (
-                        <div
-                            key={sub.id}
-                            className="item-card item-card-folder"
-                            onClick={() => renamingId !== sub.id && navigate(`/workspaces/${workspaceId}/folders/${sub.id}`)}
-                            style={{ position: 'relative' }}
-                        >
-                            <Folder size={18} style={{ color: 'var(--g-yellow)', flexShrink: 0 }} />
-
-                            {renamingId === sub.id ? (
-                                <form
-                                    onSubmit={(e) => submitRename(e, sub.id)}
-                                    onClick={(e) => e.stopPropagation()}
-                                    style={{ flex: 1, display: 'flex', gap: '6px' }}
-                                >
-                                    <input
-                                        type="text"
-                                        value={renameValue}
-                                        onChange={(e) => setRenameValue(e.target.value)}
-                                        className="ds-input"
-                                        style={{ flex: 1, fontSize: '13px', padding: '2px 6px' }}
-                                        autoFocus
-                                        onBlur={() => setRenamingId(null)}
-                                    />
-                                </form>
-                            ) : (
-                                <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-                                    {sub.name}
-                                </span>
-                            )}
-
-                            <div style={{ position: 'relative' }}>
-                                <button
-                                    onClick={(e) => toggleMenu(e, sub.id)}
-                                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: 'var(--text-muted)', display: 'flex' }}
-                                >
-                                    <MoreVertical size={14} />
-                                </button>
-
-                                {openMenuId === sub.id && (
-                                    <div
-                                        onClick={(e) => e.stopPropagation()}
-                                        style={{
-                                            position: 'absolute', right: 0, top: '100%', marginTop: '4px',
-                                            background: 'var(--surface)', border: '1px solid var(--border)',
-                                            borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                                            minWidth: '130px', zIndex: 10, overflow: 'hidden',
-                                        }}
-                                    >
-                                        <button onClick={(e) => startRename(e, sub)} style={menuItemStyle}>
-                                            <Pencil size={14} />
-                                            Rename
-                                        </button>
-                                        <button onClick={(e) => handleDeleteSubFolder(e, sub)} style={{ ...menuItemStyle, color: '#dc2626' }}>
-                                            <Trash2 size={14} />
-                                            Delete
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-                </div>
 
                 {showFolderForm && (
-                    <form onSubmit={handleCreateSubFolder} className="inline-form" style={{ marginBottom: '14px' }}>
+                    <form
+                        onSubmit={handleCreateSubFolder}
+                        style={{
+                            background: 'var(--surface-1)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius-md)',
+                            padding: '14px 16px',
+                            marginBottom: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            animation: 'slideDown 0.15s ease',
+                        }}
+                    >
                         <input
                             type="text"
                             value={newFolderName}
                             onChange={(e) => setNewFolderName(e.target.value)}
-                            placeholder="Folder name…"
+                            placeholder="Enter folder name…"
                             required
                             className="ds-input"
-                            style={{ flex: 1 }}
+                            style={{ flex: 1, padding: '8px 12px', fontSize: '13px' }}
                             autoFocus
                         />
-                        <button type="submit" className="ds-btn ds-btn-primary" disabled={createSubFolderMutation.isPending}>
+                        <button type="submit" className="ds-btn ds-btn-primary" disabled={createSubFolderMutation.isPending || !newFolderName.trim()}>
                             {createSubFolderMutation.isPending ? 'Creating…' : 'Create'}
                         </button>
-                        <button type="button" className="ds-btn ds-btn-ghost" onClick={() => { setShowFolderForm(false); setNewFolderName(''); }}>
+                        <button
+                            type="button"
+                            className="ds-btn ds-btn-ghost"
+                            onClick={() => { setShowFolderForm(false); setNewFolderName(''); }}
+                        >
                             Cancel
                         </button>
                     </form>
                 )}
+
+                {isSubFoldersLoading ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)', fontSize: '13px', padding: '16px 0' }}>
+                        <div className="ds-spinner" style={{ width: '16px', height: '16px' }} /> Loading subfolders…
+                    </div>
+                ) : subFolders.length === 0 ? (
+                    <div
+                        style={{
+                            background: 'var(--surface-1)',
+                            border: '1px dashed var(--border)',
+                            borderRadius: 'var(--radius-md)',
+                            padding: '24px 20px',
+                            textAlign: 'center',
+                            color: 'var(--text-muted)',
+                            fontSize: '13px',
+                        }}
+                    >
+                        No subfolders here yet.
+                    </div>
+                ) : (
+                    <div
+                        style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                            gap: '12px',
+                        }}
+                    >
+                        {subFolders.map((sub) => (
+                            <div
+                                key={sub.id}
+                                onClick={() => renamingId !== sub.id && navigate(`/workspaces/${workspaceId}/folders/${sub.id}`)}
+                                style={{
+                                    position: 'relative',
+                                    background: 'var(--surface-1)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: 'var(--radius-md)',
+                                    padding: '12px 14px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    transition: 'all 0.15s ease',
+                                    boxShadow: 'var(--shadow-card)',
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                                    e.currentTarget.style.background = 'var(--surface-2)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.borderColor = 'var(--border)';
+                                    e.currentTarget.style.background = 'var(--surface-1)';
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        width: '32px',
+                                        height: '32px',
+                                        borderRadius: '8px',
+                                        background: 'rgba(245, 158, 11, 0.12)',
+                                        border: '1px solid rgba(245, 158, 11, 0.25)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: 'var(--g-yellow)',
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    <Folder size={16} />
+                                </div>
+
+                                {renamingId === sub.id ? (
+                                    <form
+                                        onSubmit={(e) => submitRename(e, sub.id)}
+                                        onClick={(e) => e.stopPropagation()}
+                                        style={{ flex: 1, display: 'flex', gap: '6px' }}
+                                    >
+                                        <input
+                                            type="text"
+                                            value={renameValue}
+                                            onChange={(e) => setRenameValue(e.target.value)}
+                                            className="ds-input"
+                                            style={{ flex: 1, fontSize: '13px', padding: '4px 8px' }}
+                                            autoFocus
+                                            onBlur={() => setRenamingId(null)}
+                                        />
+                                    </form>
+                                ) : (
+                                    <span
+                                        style={{
+                                            fontSize: '13.5px',
+                                            fontWeight: 600,
+                                            color: 'var(--text-primary)',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                            flex: 1,
+                                        }}
+                                    >
+                                        {sub.name}
+                                    </span>
+                                )}
+
+                                <div style={{ position: 'relative' }}>
+                                    <button
+                                        onClick={(e) => toggleMenu(e, sub.id)}
+                                        style={{
+                                            width: '28px',
+                                            height: '28px',
+                                            borderRadius: '6px',
+                                            border: 'none',
+                                            background: openMenuId === sub.id ? 'var(--surface-3)' : 'transparent',
+                                            color: 'var(--text-muted)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        <MoreVertical size={15} />
+                                    </button>
+
+                                    {openMenuId === sub.id && (
+                                        <div
+                                            onClick={(e) => e.stopPropagation()}
+                                            style={{
+                                                position: 'absolute',
+                                                right: 0,
+                                                top: 'calc(100% + 4px)',
+                                                minWidth: '140px',
+                                                background: 'var(--surface-2)',
+                                                border: '1px solid var(--border)',
+                                                borderRadius: 'var(--radius-md)',
+                                                padding: '4px',
+                                                boxShadow: 'var(--shadow-lg)',
+                                                zIndex: 30,
+                                            }}
+                                        >
+                                            <button
+                                                onClick={(e) => startRename(e, sub)}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    width: '100%',
+                                                    padding: '7px 10px',
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '13px',
+                                                    color: 'var(--text-primary)',
+                                                    textAlign: 'left',
+                                                }}
+                                                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-3)')}
+                                                onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+                                            >
+                                                <Pencil size={13} />
+                                                Rename
+                                            </button>
+                                            <button
+                                                onClick={(e) => handleDeleteSubFolder(e, sub)}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    width: '100%',
+                                                    padding: '7px 10px',
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '13px',
+                                                    color: 'var(--g-red)',
+                                                    textAlign: 'left',
+                                                }}
+                                                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)')}
+                                                onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+                                            >
+                                                <Trash2 size={13} />
+                                                Delete
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </section>
 
-            {/* ── Documents ── */}
+            {/* ── Documents Section ───────────────────────────────────────── */}
             <section>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                    <h2 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                        Documents
-                    </h2>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                            Documents
+                        </h2>
+                        <span className="ds-badge ds-badge-blue" style={{ fontSize: '11px', padding: '2px 8px' }}>
+                            {documents.length}
+                        </span>
+                    </div>
                     <button
                         onClick={handleCreateDocument}
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: '4px',
-                            fontSize: '13px', color: 'var(--g-blue)', fontWeight: 500,
-                            background: 'none', border: 'none', cursor: 'pointer',
-                            fontFamily: 'inherit', padding: '4px 8px',
-                            borderRadius: 'var(--radius-sm)', transition: 'background-color 0.15s',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-light)'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        className="ds-btn ds-btn-primary"
+                        style={{ gap: '6px', fontSize: '13px' }}
                     >
-                        <Plus size={14} />
+                        <FilePlus size={15} />
                         New Document
                     </button>
                 </div>
 
                 {isDocumentsLoading ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '13px' }}>
-                        <div className="ds-spinner" /> Loading…
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)', fontSize: '13px', padding: '16px 0' }}>
+                        <div className="ds-spinner" style={{ width: '16px', height: '16px' }} /> Loading documents…
                     </div>
                 ) : documents.length === 0 ? (
-                    <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No documents yet.</p>
+                    <div
+                        style={{
+                            background: 'var(--surface-1)',
+                            border: '1px dashed var(--border)',
+                            borderRadius: 'var(--radius-md)',
+                            padding: '28px 20px',
+                            textAlign: 'center',
+                            color: 'var(--text-muted)',
+                            fontSize: '13px',
+                        }}
+                    >
+                        No documents in this folder yet. Click "+ New Document" to create one.
+                    </div>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {documents.map((document) => (
                             <div
                                 key={document.id}
-                                className="item-card item-card-document"
                                 onClick={() => renamingDocId !== document.id && navigate(`/documents/${document.id}`)}
-                                style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                                style={{
+                                    position: 'relative',
+                                    background: 'var(--surface-1)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: 'var(--radius-md)',
+                                    padding: '12px 16px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    gap: '12px',
+                                    transition: 'all 0.15s ease',
+                                    boxShadow: 'var(--shadow-card)',
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                                    e.currentTarget.style.background = 'var(--surface-2)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.borderColor = 'var(--border)';
+                                    e.currentTarget.style.background = 'var(--surface-1)';
+                                }}
                             >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
-                                    <FileText size={17} style={{ color: 'var(--g-blue)', flexShrink: 0 }} />
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                                    <div
+                                        style={{
+                                            width: '32px',
+                                            height: '32px',
+                                            borderRadius: '8px',
+                                            background: 'rgba(59, 130, 246, 0.12)',
+                                            border: '1px solid rgba(59, 130, 246, 0.25)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: 'var(--g-blue)',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <FileText size={16} />
+                                    </div>
+
                                     {renamingDocId === document.id ? (
                                         <form
                                             onSubmit={(e) => submitRenameDoc(e, document.id)}
@@ -309,47 +548,115 @@ function FolderPage() {
                                                 value={renameDocTitle}
                                                 onChange={(e) => setRenameDocTitle(e.target.value)}
                                                 className="ds-input"
-                                                style={{ flex: 1, fontSize: '13px', padding: '2px 6px' }}
+                                                style={{ flex: 1, fontSize: '13.5px', padding: '4px 8px' }}
                                                 autoFocus
                                                 onBlur={() => setRenamingDocId(null)}
                                             />
                                         </form>
                                     ) : (
-                                        <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        <span
+                                            style={{
+                                                fontSize: '14px',
+                                                fontWeight: 600,
+                                                color: 'var(--text-primary)',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                            }}
+                                        >
                                             {document.title}
                                         </span>
                                     )}
                                 </div>
 
-                                <div style={{ position: 'relative' }}>
-                                    <button
-                                        onClick={(e) => toggleDocMenu(e, document.id)}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: 'var(--text-muted)', display: 'flex' }}
-                                        title="Document options"
-                                    >
-                                        <MoreVertical size={14} />
-                                    </button>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        Open <ArrowRight size={12} />
+                                    </span>
 
-                                    {openDocMenuId === document.id && (
-                                        <div
-                                            onClick={(e) => e.stopPropagation()}
+                                    <div style={{ position: 'relative' }}>
+                                        <button
+                                            onClick={(e) => toggleDocMenu(e, document.id)}
                                             style={{
-                                                position: 'absolute', right: 0, top: '100%', marginTop: '4px',
-                                                background: 'var(--surface)', border: '1px solid var(--border)',
-                                                borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                                                minWidth: '130px', zIndex: 10, overflow: 'hidden',
+                                                width: '28px',
+                                                height: '28px',
+                                                borderRadius: '6px',
+                                                border: 'none',
+                                                background: openDocMenuId === document.id ? 'var(--surface-3)' : 'transparent',
+                                                color: 'var(--text-muted)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                cursor: 'pointer',
                                             }}
+                                            title="Document options"
                                         >
-                                            <button onClick={(e) => startRenameDoc(e, document)} style={menuItemStyle}>
-                                                <Pencil size={14} />
-                                                Rename
-                                            </button>
-                                            <button onClick={(e) => handleDeleteDoc(e, document)} style={{ ...menuItemStyle, color: '#dc2626' }}>
-                                                <Trash2 size={14} />
-                                                Delete
-                                            </button>
-                                        </div>
-                                    )}
+                                            <MoreVertical size={15} />
+                                        </button>
+
+                                        {openDocMenuId === document.id && (
+                                            <div
+                                                onClick={(e) => e.stopPropagation()}
+                                                style={{
+                                                    position: 'absolute',
+                                                    right: 0,
+                                                    top: 'calc(100% + 4px)',
+                                                    minWidth: '140px',
+                                                    background: 'var(--surface-2)',
+                                                    border: '1px solid var(--border)',
+                                                    borderRadius: 'var(--radius-md)',
+                                                    padding: '4px',
+                                                    boxShadow: 'var(--shadow-lg)',
+                                                    zIndex: 30,
+                                                }}
+                                            >
+                                                <button
+                                                    onClick={(e) => startRenameDoc(e, document)}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        width: '100%',
+                                                        padding: '7px 10px',
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        borderRadius: '6px',
+                                                        cursor: 'pointer',
+                                                        fontSize: '13px',
+                                                        color: 'var(--text-primary)',
+                                                        textAlign: 'left',
+                                                    }}
+                                                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-3)')}
+                                                    onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+                                                >
+                                                    <Pencil size={13} />
+                                                    Rename
+                                                </button>
+                                                <button
+                                                    onClick={(e) => handleDeleteDoc(e, document)}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        width: '100%',
+                                                        padding: '7px 10px',
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        borderRadius: '6px',
+                                                        cursor: 'pointer',
+                                                        fontSize: '13px',
+                                                        color: 'var(--g-red)',
+                                                        textAlign: 'left',
+                                                    }}
+                                                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)')}
+                                                    onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+                                                >
+                                                    <Trash2 size={13} />
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         ))}

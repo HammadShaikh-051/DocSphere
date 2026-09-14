@@ -17,6 +17,7 @@ public class DocumentDto {
     private String title;
     private Map<String, Object> content;
     private UUID workspaceId;
+    private String workspaceName;
     private UUID folderId;
     private UUID createdBy;
     private UUID lastUpdatedBy;

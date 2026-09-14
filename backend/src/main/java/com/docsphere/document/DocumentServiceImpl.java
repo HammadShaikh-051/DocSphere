@@ -215,6 +215,23 @@ public class DocumentServiceImpl implements DocumentService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<DocumentDto> getRecentDocumentsAcrossWorkspaces(UUID userId) {
+        User user = getUserOrThrow(userId);
+
+        List<Workspace> workspaces = memberRepository.findByUser(user).stream()
+                .map(WorkspaceMember::getWorkspace)
+                .collect(Collectors.toList());
+
+        if (workspaces.isEmpty()) {
+            return List.of();
+        }
+
+        return documentRepository.findTop10ByWorkspaceInAndDeletedAtIsNullOrderByUpdatedAtDesc(workspaces).stream()
+                .map(documentMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
     private void verifyCanEdit(Workspace workspace, User user) {
         WorkspaceMember member = memberRepository.findByWorkspaceAndUser(workspace, user)
                 .orElseThrow(() -> new UnauthorizedException("You are not a member of this workspace"));

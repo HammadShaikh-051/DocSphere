@@ -15,6 +15,7 @@ import java.util.UUID;
 public class ActivityLogDto {
     private UUID id;
     private UUID workspaceId;
+    private String workspaceName;
     private UUID userId;
     private String userName;
     private ActivityAction action;

@@ -16,6 +16,7 @@ import ProfilePage from '../features/profile/pages/ProfilePage';
 import OAuthCallbackPage from '../features/auth/pages/OAuthCallbackPage';
 import TrashPage from '../features/workspace/pages/TrashPage';
 import ActivityPage from '../features/activity/pages/ActivityPage';
+import LandingPage from '../features/landing/pages/LandingPage';
 
 function ProtectedRoute({ children }) {
     const isAuthenticated = useAuthStore((state) => !!state.accessToken);
@@ -27,12 +28,34 @@ function ProtectedRoute({ children }) {
     return <AppLayout>{children}</AppLayout>;
 }
 
+function PublicOnlyRoute({ children }) {
+    const isAuthenticated = useAuthStore((state) => !!state.accessToken);
+
+    if (isAuthenticated) {
+        return <Navigate to="/dashboard" replace />;
+    }
+
+    return children;
+}
+
+function RootRoute() {
+    const isAuthenticated = useAuthStore((state) => !!state.accessToken);
+
+    if (isAuthenticated) {
+        return <Navigate to="/dashboard" replace />;
+    }
+
+    return <LandingPage />;
+}
+
 function AppRouter() {
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/" element={<RootRoute />} />
+                <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
+                <Route path="/register" element={<PublicOnlyRoute><RegisterPage /></PublicOnlyRoute>} />
+                <Route path="/signup" element={<PublicOnlyRoute><RegisterPage /></PublicOnlyRoute>} />
                 <Route path="/verify-email" element={<VerifyEmailPage />} />
 
                 <Route
@@ -103,11 +126,14 @@ function AppRouter() {
 
                 <Route path="/oauth2/callback" element={<OAuthCallbackPage />} />
 
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
                 <Route
                     path="/workspaces/:workspaceId/trash"
                     element={<ProtectedRoute><TrashPage /></ProtectedRoute>}
+                />
+
+                <Route
+                    path="/activity"
+                    element={<ProtectedRoute><ActivityPage /></ProtectedRoute>}
                 />
 
                 <Route

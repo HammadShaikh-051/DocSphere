@@ -4,8 +4,10 @@ import com.docsphere.activity.dto.ActivityLogDto;
 import com.docsphere.user.User;
 import com.docsphere.workspace.Workspace;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public interface ActivityLogService {
 
@@ -21,4 +23,6 @@ public interface ActivityLogService {
     List<ActivityLogDto> getWorkspaceActivity(UUID workspaceId);
 
     List<ActivityLogDto> getRecentWorkspaceActivity(UUID workspaceId);
+
+    List<ActivityLogDto> getRecentActivityAcrossWorkspaces(UUID userId);
 }

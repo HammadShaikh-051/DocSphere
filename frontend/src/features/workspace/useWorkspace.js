@@ -16,6 +16,7 @@ export const useCreateWorkspace = () => {
         mutationFn: createWorkspace,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+            queryClient.invalidateQueries({ queryKey: ['activity'] });
         },
     });
 };
@@ -36,6 +37,7 @@ export const useUpdateWorkspace = (workspaceId) => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['workspaces', workspaceId] });
             queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+            queryClient.invalidateQueries({ queryKey: ['activity'] });
         },
     });
 };
@@ -47,6 +49,7 @@ export const useDeleteWorkspace = () => {
         mutationFn: (workspaceId) => deleteWorkspace(workspaceId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+            queryClient.invalidateQueries({ queryKey: ['activity'] });
         },
     });
 };

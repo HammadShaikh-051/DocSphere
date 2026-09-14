@@ -1,6 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getRootDocuments, createDocument, getFolderDocuments, getDocumentById, updateDocument, deleteDocument } from './documentApi';
+import {
+    getRootDocuments,
+    createDocument,
+    getFolderDocuments,
+    getDocumentById,
+    updateDocument,
+    deleteDocument,
+    getRecentDocumentsAcrossWorkspaces,
+} from './documentApi';
 
+export const useRecentDocumentsAcrossWorkspaces = () => {
+    return useQuery({
+        queryKey: ['documents', 'recent'],
+        queryFn: getRecentDocumentsAcrossWorkspaces,
+    });
+};
 
 export const useRootDocuments = (workspaceId) => {
     return useQuery({
@@ -16,7 +30,8 @@ export const useCreateDocument = (workspaceId) => {
     return useMutation({
         mutationFn: (documentData) => createDocument(workspaceId, documentData),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['documents', 'root', workspaceId] });
+            queryClient.invalidateQueries({ queryKey: ['documents'] });
+            queryClient.invalidateQueries({ queryKey: ['activity'] });
         },
     });
 };
@@ -36,7 +51,8 @@ export const useCreateDocumentInFolder = (folderId, workspaceId) => {
         mutationFn: (documentData) =>
             createDocument(workspaceId, { ...documentData, folderId }),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['documents', 'folder', folderId] });
+            queryClient.invalidateQueries({ queryKey: ['documents'] });
+            queryClient.invalidateQueries({ queryKey: ['activity'] });
         },
     });
 };
@@ -56,6 +72,7 @@ export const useUpdateDocument = (documentId) => {
         mutationFn: (documentData) => updateDocument(documentId, documentData),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['documents', documentId] });
+            queryClient.invalidateQueries({ queryKey: ['activity'] });
         },
     });
 };
@@ -67,6 +84,7 @@ export const useDeleteDocument = () => {
         mutationFn: (documentId) => deleteDocument(documentId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['documents'] });
+            queryClient.invalidateQueries({ queryKey: ['activity'] });
         },
     });
 };
@@ -78,6 +96,7 @@ export const useRenameDocument = () => {
         mutationFn: ({ documentId, title }) => updateDocument(documentId, { title }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['documents'] });
+            queryClient.invalidateQueries({ queryKey: ['activity'] });
         },
     });
 };
@@ -98,6 +117,7 @@ export const useRestoreDocument = (workspaceId) => {
         mutationFn: (documentId) => restoreDocument(documentId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['documents'] });
+            queryClient.invalidateQueries({ queryKey: ['activity'] });
         },
     });
 };
@@ -108,6 +128,7 @@ export const usePermanentlyDeleteDocument = (workspaceId) => {
         mutationFn: (documentId) => permanentlyDeleteDocument(documentId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['documents', 'trash', workspaceId] });
+            queryClient.invalidateQueries({ queryKey: ['activity'] });
         },
     });
 };

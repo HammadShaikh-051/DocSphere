@@ -29,4 +29,6 @@ public interface DocumentRepository extends JpaRepository<Document, UUID> {
     List<Document> findByDeletedAtBefore(LocalDateTime cutoff);
 
     List<Document> findByWorkspaceAndTitleContainingIgnoreCaseAndDeletedAtIsNull(Workspace workspace, String title);
+
+    List<Document> findTop10ByWorkspaceInAndDeletedAtIsNullOrderByUpdatedAtDesc(List<Workspace> workspaces);
 }

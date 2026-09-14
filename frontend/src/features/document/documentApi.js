@@ -44,3 +44,8 @@ export const getTrashedDocuments = async (workspaceId) => {
     const response = await api.get(`/workspaces/${workspaceId}/documents/trash`);
     return response.data;
 };
+
+export const getRecentDocumentsAcrossWorkspaces = async () => {
+    const response = await api.get('/documents/recent');
+    return response.data;
+};

@@ -114,4 +114,14 @@ public class DocumentController {
         List<DocumentDto> documents = documentService.getTrashedDocuments(workspaceId);
         return ResponseEntity.ok(ApiResponse.success("Trashed documents fetched successfully", documents));
     }
+
+    @GetMapping("/api/documents/recent")
+    public ResponseEntity<ApiResponse<List<DocumentDto>>> getRecentDocumentsAcrossWorkspaces(
+            @AuthenticationPrincipal CustomUserDetails currentUser
+    ) {
+        List<DocumentDto> documents = documentService.getRecentDocumentsAcrossWorkspaces(
+                currentUser.getUser().getId()
+        );
+        return ResponseEntity.ok(ApiResponse.success("Recent documents fetched successfully", documents));
+    }
 }

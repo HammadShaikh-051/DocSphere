@@ -28,4 +28,6 @@ public interface DocumentService {
     void permanentlyDeleteDocument(UUID documentId, UUID requesterId);
 
     List<DocumentDto> getTrashedDocuments(UUID workspaceId);
+ 
+    List<DocumentDto> getRecentDocumentsAcrossWorkspaces(UUID userId);
 }

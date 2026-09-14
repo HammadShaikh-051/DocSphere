@@ -1,6 +1,6 @@
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { FolderPlus, FileText, UserPlus, UserMinus, Edit3, Trash2, Activity as ActivityIcon, Pencil, Undo2 } from 'lucide-react';
-import { useWorkspaceActivity } from '../useActivity';
+import { useWorkspaceActivity, useAllWorkspacesActivity } from '../useActivity';
 import { formatRelativeTime, formatDateGroup } from '../../../utils/formatRelativeTime';
 
 const ACTION_CONFIG = {
@@ -40,7 +40,16 @@ function groupByDate(logs) {
 
 function ActivityPage() {
     const { workspaceId } = useParams();
-    const { data, isLoading } = useWorkspaceActivity(workspaceId);
+    const isWorkspaceScoped = !!workspaceId;
+
+    const workspaceQuery = useWorkspaceActivity(workspaceId);
+    const allQuery = useAllWorkspacesActivity();
+
+    const { data, isLoading, isError, error } = isWorkspaceScoped ? workspaceQuery : allQuery;
+
+    if (isError) {
+        console.error('Activity fetch error:', error);
+    }
 
     const logs = data?.data || [];
     const groups = groupByDate(logs);
@@ -53,15 +62,31 @@ function ActivityPage() {
         );
     }
 
+    if (isError) {
+        return (
+            <div style={{ maxWidth: '600px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+                    <ActivityIcon size={20} style={{ color: 'var(--text-secondary)' }} />
+                    <h1 className="page-title">{isWorkspaceScoped ? 'Activity' : 'All Activity'}</h1>
+                </div>
+                <div style={{ padding: '16px', background: 'rgba(234,67,53,0.08)', borderRadius: '8px', color: 'var(--g-red)', fontSize: '13px' }}>
+                    Failed to load activity. Please refresh the page.
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div style={{ maxWidth: '600px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
                 <ActivityIcon size={20} style={{ color: 'var(--text-secondary)' }} />
-                <h1 className="page-title">Activity</h1>
+                <h1 className="page-title">{isWorkspaceScoped ? 'Activity' : 'All Activity'}</h1>
             </div>
 
             {logs.length === 0 ? (
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No activity yet.</p>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                    {isWorkspaceScoped ? 'No activity yet in this workspace.' : 'No activity yet across your workspaces.'}
+                </p>
             ) : (
                 groups.map((group) => (
                     <div key={group.label} style={{ marginBottom: '28px' }}>
@@ -81,7 +106,7 @@ function ActivityPage() {
                             {group.logs.map((log) => {
                                 const config = ACTION_CONFIG[log.action] || ACTION_CONFIG.CREATED;
                                 const Icon = config.icon;
-                                const entityLabel = ENTITY_LABEL[log.entityType] || log.entityType.toLowerCase();
+                                const entityLabel = ENTITY_LABEL[log.entityType] || log.entityType?.toLowerCase();
 
                                 return (
                                     <div key={log.id} style={{ display: 'flex', gap: '14px', marginBottom: '18px', position: 'relative' }}>
@@ -108,6 +133,21 @@ function ActivityPage() {
                                                 )}
                                             </p>
                                             <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                                {log.workspaceName && (
+                                                    <>
+                                                        <Link
+                                                            to={`/workspaces/${log.workspaceId}`}
+                                                            style={{
+                                                                color: 'var(--text-secondary)',
+                                                                fontWeight: 600,
+                                                                textDecoration: 'none',
+                                                            }}
+                                                        >
+                                                            {log.workspaceName}
+                                                        </Link>
+                                                        {' · '}
+                                                    </>
+                                                )}
                                                 {formatRelativeTime(log.createdAt)}
                                             </p>
                                         </div>

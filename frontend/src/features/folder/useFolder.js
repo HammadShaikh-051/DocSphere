@@ -16,6 +16,7 @@ export const useCreateFolder = (workspaceId) => {
         mutationFn: (folderData) => createFolder(workspaceId, folderData),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['folders', 'root', workspaceId] });
+            queryClient.invalidateQueries({ queryKey: ['activity'] });
         },
     });
 };
@@ -44,6 +45,7 @@ export const useCreateSubFolder = (folderId, workspaceId) => {
             createFolder(workspaceId, { ...folderData, parentFolderId: folderId }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['folders', 'subfolders', folderId] });
+            queryClient.invalidateQueries({ queryKey: ['activity'] });
         },
     });
 };
@@ -56,6 +58,7 @@ export const useDeleteFolder = () => {
             deleteFolder(folderId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['folders'] });
+            queryClient.invalidateQueries({ queryKey: ['activity'] });
         },
     });
 };
@@ -67,6 +70,7 @@ export const useRenameFolder = () => {
         mutationFn: ({ folderId, name }) => renameFolder(folderId, name),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['folders'] });
+            queryClient.invalidateQueries({ queryKey: ['activity'] });
         },
     });
 };
@@ -87,6 +91,7 @@ export const useRestoreFolder = (workspaceId) => {
         mutationFn: (folderId) => restoreFolder(folderId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['folders'] });
+            queryClient.invalidateQueries({ queryKey: ['activity'] });
         },
     });
 };
@@ -97,6 +102,7 @@ export const usePermanentlyDeleteFolder = (workspaceId) => {
         mutationFn: (folderId) => permanentlyDeleteFolder(folderId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['folders', 'trash', workspaceId] });
+            queryClient.invalidateQueries({ queryKey: ['activity'] });
         },
     });
 };

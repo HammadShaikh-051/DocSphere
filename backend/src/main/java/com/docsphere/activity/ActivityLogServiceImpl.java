@@ -2,13 +2,17 @@ package com.docsphere.activity;
 
 import com.docsphere.activity.dto.ActivityLogDto;
 import com.docsphere.common.exception.ResourceNotFoundException;
+import com.docsphere.member.WorkspaceMember;
+import com.docsphere.member.WorkspaceMemberRepository;
 import com.docsphere.user.User;
+import com.docsphere.user.UserRepository;
 import com.docsphere.workspace.Workspace;
 import com.docsphere.workspace.WorkspaceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -20,6 +24,8 @@ public class ActivityLogServiceImpl implements ActivityLogService {
     private final ActivityLogRepository activityLogRepository;
     private final WorkspaceRepository workspaceRepository;
     private final ActivityLogMapper activityLogMapper;
+    private final UserRepository userRepository;
+    private final WorkspaceMemberRepository workspaceMemberRepository;
 
     @Override
     @Transactional
@@ -58,6 +64,25 @@ public class ActivityLogServiceImpl implements ActivityLogService {
 
         return activityLogRepository.findTop10ByWorkspaceOrderByCreatedAtDesc(workspace).stream()
                 .map(activityLogMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ActivityLogDto> getRecentActivityAcrossWorkspaces(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        List<Workspace> workspaces = workspaceMemberRepository.findByUser(user).stream()
+                .map(WorkspaceMember::getWorkspace)
+                .collect(Collectors.toList());
+
+        if (workspaces.isEmpty()) {
+            return List.of();
+        }
+
+        return activityLogRepository.findTop20ByWorkspaceInOrderByCreatedAtDesc(workspaces).stream()
+                .map(activityLogMapper::toDto)
+                .sorted(Comparator.comparing(ActivityLogDto::getCreatedAt).reversed())
                 .collect(Collectors.toList());
     }
 

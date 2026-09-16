@@ -1,0 +1,80 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: docsphere-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-docsphere}
+      POSTGRES_USER: ${POSTGRES_USER:-docsphere_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-docsphere_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-docsphere_user} -d ${POSTGRES_DB:-docsphere}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - docsphere-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: docsphere-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-docsphere}
+      DB_USERNAME: ${POSTGRES_USER:-docsphere_user}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-docsphere_password}
+
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+
+      JWT_SECRET: ${JWT_SECRET}
+
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+
+      BREVO_API_KEY: ${BREVO_API_KEY:-dev_dummy_brevo_key}
+      BREVO_SENDER_EMAIL: ${BREVO_SENDER_EMAIL:-dev@docsphere.local}
+      BREVO_SENDER_NAME: ${BREVO_SENDER_NAME:-DocSphere Dev}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-dev_cloud_name}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-dev_api_key}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-dev_api_secret}
+    networks:
+      - docsphere-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080/api}
+    container_name: docsphere-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    networks:
+      - docsphere-network
+
+volumes:
+  postgres_data:
+    name: docsphere_postgres_data
+
+networks:
+  docsphere-network:
+    name: docsphere-network
+    driver: bridge

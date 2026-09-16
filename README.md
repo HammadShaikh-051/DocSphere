@@ -138,6 +138,45 @@ http://localhost:5173
 
 ---
 
+### 3. Run with Docker (Full Stack)
+
+You can run the entire DocSphere stack (Frontend, Backend, and PostgreSQL) locally with Docker Compose.
+
+#### Prerequisites
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
+
+#### Start Containers
+From the repository root:
+
+```bash
+docker compose up --build
+```
+
+#### Stop Containers
+To stop all running services:
+
+```bash
+docker compose down
+```
+
+To stop and also remove the local PostgreSQL data volume:
+
+```bash
+docker compose down -v
+```
+
+#### Local URLs
+- **Frontend:** [http://localhost:5173](http://localhost:5173)
+- **Backend API:** [http://localhost:8080](http://localhost:8080) (Health: [http://localhost:8080/health](http://localhost:8080/health))
+- **PostgreSQL:** `localhost:5432`
+
+> [!NOTE]
+> - **Database Scope:** The Docker PostgreSQL container is dedicated to **local development and testing only**. The production deployment continues to use Neon Serverless PostgreSQL.
+> - **Data Persistence:** Local database records persist across restarts in a named Docker volume (`docsphere_postgres_data`).
+> - **Environment Variables:** The default setup starts automatically with safe local development defaults. To customize ports or test external third-party services (Google OAuth, Cloudinary, Brevo) locally, copy `.env.docker.example` to `.env` and fill in your values. Never commit real secrets.
+
+---
+
 ## 🚀 Future Enhancements
 
 Planned improvements for DocSphere include:
